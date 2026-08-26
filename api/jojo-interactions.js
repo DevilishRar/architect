@@ -1,8 +1,8 @@
-const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
-const PUBLIC_KEY = process.env.BUILDER_PUBLIC_KEY || '';
+const BOT_TOKEN = process.env.STAR_PLATINUM_TOKEN || '';
+const PUBLIC_KEY = process.env.STAR_PLATINUM_PUBLIC_KEY || '';
 const crypto = require('crypto');
 
-const APP_ID = '1541032062570598460';
+const APP_ID = '1542117577998733402';
 
 function getHeaders() {
   return { Authorization: `Bot ${BOT_TOKEN}`, 'Content-Type': 'application/json' };

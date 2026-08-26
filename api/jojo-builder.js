@@ -515,20 +515,20 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // ── REGISTER SLASH COMMANDS ──
+    // ── REGISTER SLASH COMMANDS (via Star Platinum) ──
     log.push('Registering slash commands...');
-    const commands = [
-      { name: 'help', description: 'Show all bot commands' },
-      { name: 'roles', description: 'List all available character roles' },
-      { name: 'role', description: 'Get a character role', options: [{ name: 'character', description: 'Character name (e.g. jotaro-kujo, Giorno Giovanna)', type: 3, required: true, autocomplete: true }] },
-      { name: 'server', description: 'Show server info' },
-      { name: 'avatar', description: "Get a user's avatar", options: [{ name: 'user', description: 'User to get avatar of', type: 6, required: false }] },
-      { name: '8ball', description: 'Ask the Stand Arrow', options: [{ name: 'question', description: 'Your question', type: 3, required: true }] },
-      { name: 'poll', description: 'Create a yes/no poll', options: [{ name: 'question', description: 'Poll question', type: 3, required: true }] },
-    ];
     try {
-      const cmdRes = await api('PUT', `/applications/${botUser.id}/guilds/${guildId}/commands`, commands);
-      log.push(`Registered ${Array.isArray(cmdRes) ? cmdRes.length : 0} slash commands`);
+      const regRes = await fetch(`https://architect-henna-eta.vercel.app/api/jojo-register-commands`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guild_id: guildId, secret: 'jojo-register-2026' })
+      });
+      const regData = await regRes.json();
+      if (regData.success) {
+        log.push(`Registered ${regData.registered} slash commands via Star Platinum`);
+      } else {
+        log.push(`Warning: Command registration failed (${regData.error || 'unknown'})`);
+      }
     } catch (e) {
       log.push(`Warning: Command registration failed (${e.message})`);
     }

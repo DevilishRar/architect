@@ -1,4 +1,4 @@
-const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
+const BOT_TOKEN = process.env.STAR_PLATINUM_TOKEN || '';
 const SECRET = 'jojo-register-2026';
 
 module.exports = async function handler(req, res) {
@@ -73,7 +73,7 @@ module.exports = async function handler(req, res) {
   ];
 
   try {
-    const r = await fetch(`https://discord.com/api/v10/applications/1541032062570598460/guilds/${guildId}/commands`, {
+    const r = await fetch(`https://discord.com/api/v10/applications/1542117577998733402/guilds/${guildId}/commands`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(commands)
