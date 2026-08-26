@@ -6,7 +6,8 @@ function getHeaders() {
   return { Authorization: `Bot ${BOT_TOKEN}`, 'Content-Type': 'application/json' };
 }
 
-async function api(method, path, body) {
+async function api(method, path, body, _retries) {
+  if (_retries > 3) return null;
   const now = Date.now();
   if (now < rateLimitReset) await new Promise(r => setTimeout(r, rateLimitReset - now + 50));
   const opts = { method, headers: getHeaders() };
@@ -14,9 +15,10 @@ async function api(method, path, body) {
   const res = await fetch(`${REST}${path}`, opts);
   const retry = res.headers.get('retry-after');
   if (retry) {
-    rateLimitReset = Date.now() + parseFloat(retry) * 1000 + 200;
-    await new Promise(r => setTimeout(r, parseFloat(retry) * 1000 + 300));
-    return api(method, path, body);
+    const wait = Math.min(parseFloat(retry) * 1000 + 300, 5000);
+    rateLimitReset = Date.now() + wait;
+    await new Promise(r => setTimeout(r, wait));
+    return api(method, path, body, (_retries || 0) + 1);
   }
   if (res.status === 204) return null;
   if (!res.ok) { const e = await res.text(); throw new Error(`${res.status}: ${e}`); }
