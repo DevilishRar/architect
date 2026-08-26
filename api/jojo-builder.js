@@ -622,7 +622,7 @@ module.exports = async function handler(req, res) {
 
       // Get channels with full error handling
       const chRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
-        headers: { Authorization: `Bot ${DISCORD_TOKEN}`, 'Content-Type': 'application/json' }
+        headers: { Authorization: `Bot ${BOT_TOKEN}`, 'Content-Type': 'application/json' }
       });
       const allCh = await chRes.json();
 
@@ -643,7 +643,7 @@ module.exports = async function handler(req, res) {
 
         const patchRes = await fetch(`https://discord.com/api/v10/channels/${ch.id}`, {
           method: 'PATCH',
-          headers: { Authorization: `Bot ${DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+          headers: { Authorization: `Bot ${BOT_TOKEN}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ permission_overwrites: newOws })
         });
 
