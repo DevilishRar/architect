@@ -433,16 +433,20 @@ module.exports = async function handler(req, res) {
   const guildId = body.guild_id;
   if (!guildId) return res.status(400).json({ error: 'guild_id required' });
   const phase = body.phase || 1;
+  const roleIds = body.roles || {};
+  const botUserId = body.botUserId || null;
+  const channelLookup = body.channels || {};
 
   const log = [];
   const t = Date.now();
 
-  try {
-    // ── PHASE 1: Cleanup + Create roles ──
-    if (phase === 1) {
-      const botUser = await api('GET', '/users/@me');
-      const botUserId = botUser ? botUser.id : null;
+  function cleanKey(name) {
+    return name.replace(/[^\w\s]/g, '').replace(/\s+/g, '_').toLowerCase().replace(/^_+|_+$/g, '');
+  }
 
+  try {
+    // ── PHASE 1: Cleanup ──
+    if (phase === 1) {
       log.push('Cleaning up existing channels and roles...');
       const [allChannels, allRoles] = await Promise.all([
         api('GET', `/guilds/${guildId}/channels`),
@@ -453,68 +457,62 @@ module.exports = async function handler(req, res) {
       const catsToDelete = allChannels.filter(c => c.type === 4).sort((a, b) => b.position - a.position);
       const rolesToDelete = allRoles.filter(r => r.name !== '@everyone' && !r.managed);
 
-      for (let i = 0; i < channelsToDelete.length; i += 50) {
-        const batch = channelsToDelete.slice(i, i + 50);
-        await Promise.all(batch.map(ch => api('DELETE', `/channels/${ch.id}`).catch(() => null)));
+      for (const ch of channelsToDelete) {
+        await api('DELETE', `/channels/${ch.id}`).catch(() => null);
       }
-      for (let i = 0; i < catsToDelete.length; i += 50) {
-        const batch = catsToDelete.slice(i, i + 50);
-        await Promise.all(batch.map(cat => api('DELETE', `/channels/${cat.id}`).catch(() => null)));
+      for (const cat of catsToDelete) {
+        await api('DELETE', `/channels/${cat.id}`).catch(() => null);
       }
-      for (let i = 0; i < rolesToDelete.length; i += 50) {
-        const batch = rolesToDelete.slice(i, i + 50);
-        await Promise.all(batch.map(r => api('DELETE', `/guilds/${guildId}/roles/${r.id}`).catch(() => null)));
+      for (const r of rolesToDelete) {
+        await api('DELETE', `/guilds/${guildId}/roles/${r.id}`).catch(() => null);
       }
-      await new Promise(r => setTimeout(r, 500));
+
+      const elapsed = ((Date.now() - t) / 1000).toFixed(1);
+      log.push(`Cleanup done in ${elapsed}s — deleted ${channelsToDelete.length + catsToDelete.length} channels, ${rolesToDelete.length} roles`);
+
+      return res.status(200).json({ success: true, phase: 1, complete: false, log, elapsed: elapsed + 's' });
+    }
+
+    // ── PHASE 2: Create roles ──
+    if (phase === 2) {
+      const botUser = await api('GET', '/users/@me');
+      const botUserIdNew = botUser ? botUser.id : null;
 
       log.push('Creating roles...');
-      const roleIds = {};
-      for (let i = 0; i < CONFIG.roles.length; i += 25) {
-        const batch = CONFIG.roles.slice(i, i + 25);
-        const results = await Promise.all(batch.map(def =>
-          api('POST', `/guilds/${guildId}/roles`, {
-            name: def.name, color: def.color, permissions: def.permissions,
-            hoist: def.hoist, mentionable: def.mentionable
-          }).then(role => ({ name: def.name, role })).catch(() => null)
-        ));
-        for (const r of results) {
-          if (r && r.role) roleIds[r.name] = r.role.id;
-        }
-        if (i + 25 < CONFIG.roles.length) await new Promise(r => setTimeout(r, 500));
+      const newRoleIds = {};
+      for (const def of CONFIG.roles) {
+        const role = await api('POST', `/guilds/${guildId}/roles`, {
+          name: def.name, color: def.color, permissions: def.permissions,
+          hoist: def.hoist, mentionable: def.mentionable
+        }).catch(() => null);
+        if (role) newRoleIds[def.name] = role.id;
       }
 
       await api('PATCH', `/guilds/${guildId}/roles`,
-        CONFIG.roles.map(r => ({ id: roleIds[r.name], position: r.position }))
+        CONFIG.roles.map(r => ({ id: newRoleIds[r.name], position: r.position }))
       ).catch(() => null);
 
       const elapsed = ((Date.now() - t) / 1000).toFixed(1);
-      log.push(`Phase 1 done in ${elapsed}s — ${Object.keys(roleIds).length} roles created`);
+      log.push(`Roles done in ${elapsed}s — created ${Object.keys(newRoleIds).length} roles`);
 
       return res.status(200).json({
-        success: true, phase: 1, complete: false,
-        log, roles: roleIds, botUserId,
+        success: true, phase: 2, complete: false, log,
+        roles: newRoleIds, botUserId: botUserIdNew,
         elapsed: elapsed + 's'
       });
     }
 
-    // ── PHASE 2: Create channels ──
-    if (phase === 2) {
-      const roleIds = body.roles || {};
-      const botUserId = body.botUserId || null;
-
+    // ── PHASE 3: Create channels ──
+    if (phase === 3) {
       log.push('Creating categories and channels...');
-      const channelLookup = {};
-
-      function cleanKey(name) {
-        return name.replace(/[^\w\s]/g, '').replace(/\s+/g, '_').toLowerCase().replace(/^_+|_+$/g, '');
-      }
+      const chLookup = {};
 
       for (const catDef of CONFIG.categories) {
         const cat = await api('POST', `/guilds/${guildId}/channels`, {
           name: catDef.name, type: 4, permission_overwrites: []
         });
         if (!cat) continue;
-        channelLookup[catDef.name] = cat.id;
+        chLookup[catDef.name] = cat.id;
 
         for (const chDef of catDef.children) {
           const chPayload = {
@@ -525,28 +523,23 @@ module.exports = async function handler(req, res) {
           if (chDef.decor) chPayload.flags = (1 << 21).toString();
           const ch = await api('POST', `/guilds/${guildId}/channels`, chPayload).catch(() => null);
           if (ch) {
-            const key = cleanKey(chDef.name);
-            channelLookup[chDef.name] = ch.id;
-            channelLookup[key] = ch.id;
+            chLookup[chDef.name] = ch.id;
+            chLookup[cleanKey(chDef.name)] = ch.id;
           }
         }
       }
 
       const elapsed = ((Date.now() - t) / 1000).toFixed(1);
-      log.push(`Phase 2 done in ${elapsed}s — ${Object.keys(channelLookup).length} channels created`);
+      log.push(`Channels done in ${elapsed}s — created ${Object.keys(chLookup).length} channels`);
 
       return res.status(200).json({
-        success: true, phase: 2, complete: false,
-        log, channels: channelLookup,
-        elapsed: elapsed + 's'
+        success: true, phase: 3, complete: false, log,
+        channels: chLookup, elapsed: elapsed + 's'
       });
     }
 
-    // ── PHASE 3: Register commands + env output ──
-    if (phase === 3) {
-      const roleIds = body.roles || {};
-      const channelLookup = body.channels || {};
-
+    // ── PHASE 4: Register commands + env output ──
+    if (phase === 4) {
       log.push('Registering slash commands...');
       try {
         const regRes = await fetch(`https://architect-henna-eta.vercel.app/api/jojo-register-commands`, {
@@ -585,9 +578,8 @@ module.exports = async function handler(req, res) {
       log.push(`Build complete in ${elapsed}s`);
 
       return res.status(200).json({
-        success: true, phase: 3, complete: true,
-        log, env: envOutput,
-        elapsed: elapsed + 's'
+        success: true, phase: 4, complete: true,
+        log, env: envOutput, elapsed: elapsed + 's'
       });
     }
 

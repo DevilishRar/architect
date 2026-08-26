@@ -1,4 +1,12 @@
 {
+  "functions": {
+    "api/jojo-builder.js": {
+      "maxDuration": 60
+    },
+    "api/jojo-send-messages.js": {
+      "maxDuration": 60
+    }
+  },
   "headers": [
     {
       "source": "/api/(.*)",
