@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ambrosia Architect</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Ambrosia Architect</h1>
+    <p class="subtitle">Discord Server Builder</p>
+
+    <div class="status" id="status">Ready</div>
+
+    <div class="card">
+      <h2>How to Use</h2>
+      <ol>
+        <li>Create a new Discord Application at <a href="https://discord.com/developers/applications" target="_blank">Discord Developer Portal</a></li>
+        <li>Enable MESSAGE CONTENT INTENT and SERVER MEMBERS INTENT</li>
+        <li>Invite the bot with Administrator permission</li>
+        <li>Encode the bot token: open console (F12) on any page and type <code>btoa('YOUR_TOKEN')</code></li>
+        <li>Update <code>console-builder.js</code> with your Vercel URL, encoded token, guild ID, and log channel ID</li>
+        <li>Open any website, press F12, paste <code>console-builder.js</code> content, press Enter</li>
+        <li>All IDs print in console + .env copies to clipboard</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>Builder Bot Credentials</h2>
+      <div class="field">
+        <label>Application ID</label>
+        <span id="appId">1541032062570598460</span>
+      </div>
+      <div class="field">
+        <label>Public Key</label>
+        <span id="pubKey">a1f96c84738c635b50a5bb6fffc2f63f8833f2aba3fd4f60f3cb8097067f25af</span>
+      </div>
+      <div class="field">
+        <label>Interactions Endpoint</label>
+        <span id="interactionsUrl">Set in Discord Developer Portal</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Environment Status</h2>
+      <div class="field">
+        <label>Builder Bot Token</label>
+        <span class="status-ok" id="tokenStatus">Configured</span>
+      </div>
+      <div class="field">
+        <label>API Endpoint</label>
+        <span class="status-ok">/api/builder</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      Ambrosia Architect v1.0
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

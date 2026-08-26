@@ -1,0 +1,8 @@
+{
+  "name": "ambrosia-builder-bot",
+  "version": "1.0.0",
+  "description": "Ambrosia Discord server builder - creates the entire server structure via browser console",
+  "main": "console-builder.js",
+  "scripts": {},
+  "dependencies": {}
+}
