@@ -1,14 +1,9 @@
-const ENCODED_BOT_TOKEN = process.env.BUILDER_BOT_TOKEN || '';
+const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 const REST = 'https://discord.com/api/v10';
-let DECODED_TOKEN = '';
 let rateLimitReset = 0;
 
-function decodeToken(encoded) {
-  try { return Buffer.from(encoded, 'base64').toString('utf8'); } catch (e) { throw new Error('Failed to decode bot token'); }
-}
-
 function getHeaders() {
-  return { Authorization: `Bot ${DECODED_TOKEN}`, 'Content-Type': 'application/json' };
+  return { Authorization: `Bot ${BOT_TOKEN}`, 'Content-Type': 'application/json' };
 }
 
 async function api(method, path, body) {
@@ -451,7 +446,7 @@ module.exports = async function handler(req, res) {
   if (!body) return res.status(400).json({ error: 'No body' });
   if (body.secret !== 'jojo-build-2026') return res.status(403).json({ error: 'Invalid secret' });
 
-  try { DECODED_TOKEN = decodeToken(ENCODED_BOT_TOKEN); } catch (e) { return res.status(500).json({ error: e.message }); }
+  if (!BOT_TOKEN) return res.status(500).json({ error: 'DISCORD_BOT_TOKEN not set' });
 
   const guildId = body.guild_id;
   if (!guildId) return res.status(400).json({ error: 'guild_id required' });
