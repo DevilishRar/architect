@@ -422,6 +422,9 @@ function chPerms(roleIds, ch, guildId, botUserId) {
     ow.push({ id: botUserId, type: 1, allow: FULL, deny: '0' });
   }
 
+  // ── Star Platinum bot: FULL on everything (sends messages + interactions) ──
+  ow.push({ id: '1542117577998733402', type: 1, allow: FULL, deny: '0' });
+
   return ow;
 }
 
@@ -608,6 +611,31 @@ module.exports = async function handler(req, res) {
         success: true, phase: 4, complete: true,
         log, env: envOutput, elapsed: elapsed + 's'
       });
+    }
+
+    // ── PHASE 5: Fix permissions (add Star Platinum bot to all channels) ──
+    if (phase === 5) {
+      const SP_ID = '1542117577998733402';
+      const FULL_PERMS = bit(P.VIEW, P.READ_HIST, P.SEND, P.EMBED, P.ATTACH, P.MANAGE_MSG, P.MENTION, P.ADD_REACTIONS, P.SEND_THREADS, P.CREATE_THREADS, P.SEND_POLLS, P.MANAGE_CH, P.MANAGE_ROLES, P.ADMIN).toString();
+
+      log.push('Adding Star Platinum bot permissions to all channels...');
+      const allCh = await api('GET', `/guilds/${guildId}/channels`);
+      let fixed = 0;
+
+      for (const ch of (allCh || [])) {
+        const ows = ch.permission_overwrites || [];
+        const hasSP = ows.some(o => o.id === SP_ID);
+        if (hasSP) continue;
+
+        const newOws = [...ows, { id: SP_ID, type: 1, allow: FULL_PERMS, deny: '0' }];
+        const r = await api('PATCH', `/channels/${ch.id}`, { permission_overwrites: newOws });
+        if (r) { fixed++; log.push(`  Fixed: ${ch.name}`); }
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      const elapsed = ((Date.now() - t) / 1000).toFixed(1);
+      log.push(`Permissions fixed in ${elapsed}s — patched ${fixed} channels`);
+      return res.status(200).json({ success: true, phase: 5, complete: true, log, elapsed: elapsed + 's' });
     }
 
     return res.status(400).json({ error: 'Invalid phase' });
