@@ -8,7 +8,7 @@ function getHeaders() {
 
 async function api(method, path, body) {
   const now = Date.now();
-  if (now < rateLimitReset) await new Promise(r => setTimeout(r, rateLimitReset - now + 50));
+  if (now < rateLimitReset) await new Promise(r => setTimeout(r, rateLimitReset - now + 100));
   const opts = { method, headers: getHeaders() };
   if (body) opts.body = JSON.stringify(body);
   let res;
@@ -18,13 +18,13 @@ async function api(method, path, body) {
     return null;
   }
   const retry = res.headers.get('retry-after');
-  if (retry) {
-    const wait = Math.min(parseFloat(retry) * 1000 + 500, 3000);
-    rateLimitReset = Date.now() + wait;
-    await new Promise(r => setTimeout(r, wait));
-    opts.headers = getHeaders();
-    if (body) opts.body = JSON.stringify(body);
+  if (retry || res.status === 429) {
+    const waitMs = retry ? parseFloat(retry) * 1000 + 500 : 2000;
+    rateLimitReset = Date.now() + waitMs;
+    await new Promise(r => setTimeout(r, waitMs));
     try {
+      opts.headers = getHeaders();
+      if (body) opts.body = JSON.stringify(body);
       res = await fetch(`${REST}${path}`, opts);
     } catch (e) {
       return null;
@@ -488,7 +488,7 @@ module.exports = async function handler(req, res) {
     // ── PHASE 2: Create roles (split: sub param selects chunk) ──
     if (phase === 2) {
       const sub = body.sub || 0;
-      const perSub = 20;
+      const perSub = 10;
       const start = sub * perSub;
       const chunk = CONFIG.roles.slice(start, start + perSub);
 
