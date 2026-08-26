@@ -4,7 +4,5 @@
   "description": "Ambrosia Discord server builder",
   "main": "console-builder.js",
   "scripts": {},
-  "dependencies": {
-    "@vercel/kv": "^3.0.0"
-  }
+  "dependencies": {}
 }
