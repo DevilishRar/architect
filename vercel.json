@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/jojo-builder.js": {
+      "maxDuration": 300
+    }
+  }
+}
