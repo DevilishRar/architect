@@ -449,30 +449,41 @@ module.exports = async function handler(req, res) {
       api('GET', `/guilds/${guildId}/roles`)
     ]);
 
-    for (const ch of allChannels.filter(c => c.type !== 4).sort((a, b) => b.position - a.position)) {
-      await api('DELETE', `/channels/${ch.id}`).catch(() => null);
-      await new Promise(r => setTimeout(r, 100));
-    }
-    for (const cat of allChannels.filter(c => c.type === 4).sort((a, b) => b.position - a.position)) {
-      await api('DELETE', `/channels/${cat.id}`).catch(() => null);
-      await new Promise(r => setTimeout(r, 100));
-    }
-    for (const role of allRoles.filter(r => r.name !== '@everyone' && !r.managed)) {
-      await api('DELETE', `/guilds/${guildId}/roles/${role.id}`).catch(() => null);
-      await new Promise(r => setTimeout(r, 100));
-    }
-    await new Promise(r => setTimeout(r, 1000));
+    const channelsToDelete = allChannels.filter(c => c.type !== 4).sort((a, b) => b.position - a.position);
+    const catsToDelete = allChannels.filter(c => c.type === 4).sort((a, b) => b.position - a.position);
+    const rolesToDelete = allRoles.filter(r => r.name !== '@everyone' && !r.managed);
 
-    // ── CREATE ROLES ──
+    // Delete channels in batches of 50
+    for (let i = 0; i < channelsToDelete.length; i += 50) {
+      const batch = channelsToDelete.slice(i, i + 50);
+      await Promise.all(batch.map(ch => api('DELETE', `/channels/${ch.id}`).catch(() => null)));
+    }
+    // Delete categories in batches of 50
+    for (let i = 0; i < catsToDelete.length; i += 50) {
+      const batch = catsToDelete.slice(i, i + 50);
+      await Promise.all(batch.map(cat => api('DELETE', `/channels/${cat.id}`).catch(() => null)));
+    }
+    // Delete roles in batches of 50
+    for (let i = 0; i < rolesToDelete.length; i += 50) {
+      const batch = rolesToDelete.slice(i, i + 50);
+      await Promise.all(batch.map(r => api('DELETE', `/guilds/${guildId}/roles/${r.id}`).catch(() => null)));
+    }
+    await new Promise(r => setTimeout(r, 500));
+
+    // ── CREATE ROLES (in batches of 50) ──
     log.push('Creating roles...');
     const roleIds = {};
-    for (const def of CONFIG.roles) {
-      const role = await api('POST', `/guilds/${guildId}/roles`, {
-        name: def.name, color: def.color, permissions: def.permissions,
-        hoist: def.hoist, mentionable: def.mentionable
-      });
-      if (role) roleIds[def.name] = role.id;
-      await new Promise(r => setTimeout(r, 50));
+    for (let i = 0; i < CONFIG.roles.length; i += 50) {
+      const batch = CONFIG.roles.slice(i, i + 50);
+      const results = await Promise.all(batch.map(def =>
+        api('POST', `/guilds/${guildId}/roles`, {
+          name: def.name, color: def.color, permissions: def.permissions,
+          hoist: def.hoist, mentionable: def.mentionable
+        }).then(role => ({ name: def.name, role })).catch(() => null)
+      ));
+      for (const r of results) {
+        if (r && r.role) roleIds[r.name] = r.role.id;
+      }
     }
 
     // Order roles
@@ -498,20 +509,27 @@ module.exports = async function handler(req, res) {
       if (!cat) continue;
       channelLookup[catDef.name] = cat.id;
 
-      for (const chDef of catDef.children) {
-        const chPayload = {
-          name: chDef.name, type: chDef.type, parent_id: cat.id,
-          topic: chDef.topic || undefined,
-          permission_overwrites: chPerms(roleIds, chDef, guildId, botUserId)
-        };
-        if (chDef.decor) chPayload.flags = (1 << 21).toString();
-        const ch = await api('POST', `/guilds/${guildId}/channels`, chPayload);
-        if (ch) {
-          const key = cleanKey(chDef.name);
-          channelLookup[chDef.name] = ch.id;
-          channelLookup[key] = ch.id;
+      // Create channels in this category in batches of 10 (need parent_id)
+      for (let i = 0; i < catDef.children.length; i += 10) {
+        const batch = catDef.children.slice(i, i + 10);
+        const chResults = await Promise.all(batch.map(chDef => {
+          const chPayload = {
+            name: chDef.name, type: chDef.type, parent_id: cat.id,
+            topic: chDef.topic || undefined,
+            permission_overwrites: chPerms(roleIds, chDef, guildId, botUserId)
+          };
+          if (chDef.decor) chPayload.flags = (1 << 21).toString();
+          return api('POST', `/guilds/${guildId}/channels`, chPayload)
+            .then(ch => ({ chDef, ch }))
+            .catch(() => null);
+        }));
+        for (const r of chResults) {
+          if (r && r.ch) {
+            const key = cleanKey(r.chDef.name);
+            channelLookup[r.chDef.name] = r.ch.id;
+            channelLookup[key] = r.ch.id;
+          }
         }
-        await new Promise(r => setTimeout(r, 50));
       }
     }
 
