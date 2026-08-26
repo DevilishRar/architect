@@ -89,14 +89,36 @@ module.exports = async function handler(req, res) {
   const log = [];
   let delay = 0;
 
-  async function send(channelId, embedOrContent) {
+  async function send(channelId, embedOrContent, components) {
     if (!channelId) { log.push('SKIP (no ID)'); return; }
     await new Promise(r => setTimeout(r, delay));
-    const ok = typeof embedOrContent === 'string'
-      ? await sendMessage(channelId, embedOrContent)
-      : await sendEmbed(channelId, embedOrContent);
-    log.push(`${channelId}: ${ok ? 'OK' : 'FAIL'}`);
+    try {
+      const payload = typeof embedOrContent === 'string'
+        ? { content: embedOrContent }
+        : { embeds: [embedOrContent] };
+      if (components) payload.components = components;
+      await api('POST', `/channels/${channelId}/messages`, payload);
+      log.push(`${channelId}: OK`);
+    } catch (e) {
+      log.push(`${channelId}: FAIL (${e.message})`);
+    }
     delay = 800;
+  }
+
+  function makeButtons(chars) {
+    const rows = [];
+    for (let i = 0; i < chars.length; i += 5) {
+      rows.push({
+        type: 1,
+        components: chars.slice(i, i + 5).map(c => ({
+          type: 2,
+          label: c,
+          style: 2,
+          custom_id: 'role_' + c.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_')
+        }))
+      });
+    }
+    return rows;
   }
 
   // ══════════════════════════════════════════════════
@@ -175,26 +197,86 @@ module.exports = async function handler(req, res) {
   });
 
   // ══════════════════════════════════════════════════
-  // 🎭 ROLE SELECT (with buttons)
+  // 🎭 ROLE SELECT (interactive buttons — one message per part)
   // ══════════════════════════════════════════════════
+
+  // Header embed
   await send(ids.role_select, {
     title: 'Choose Your Stand User!',
-    description: 'Pick your JoJo character role! Each role gives you a unique color in the member list.\n\nClick the buttons below to get your character role.',
+    description: 'Click a button below to claim your character role. You can only have one at a time — picking a new one removes the old.\n\nYour role gives you a unique color in the member list.',
     color: COLORS.gold,
     image: { url: GIFS.jjbaMeme },
-    fields: [
-      { name: 'Phantom Blood', value: 'Jonathan Joestar, Dio Brando, Zeppeli, Speedwagon, Erina, George I, Bruford, Tarkus, Dire, Straizo, Poco, Wang Chan', inline: false },
-      { name: 'Battle Tendency', value: 'Joseph Joestar, Caesar Zeppeli, Lisa Lisa, Wamuu, Kars, Esidisi, Stroheim, Suzi Q, Messina, Loggins', inline: false },
-      { name: 'Stardust Crusaders', value: 'Jotaro, Star Platinum, Polnareff, Silver Chariot, Kakyoin, Hierophant Green, Avdol, Magician Red, Iggy, The Fool, DIO, The World, Old Joseph, Hermit Purple, Hol Horse, Emperor, Boingo, Tohth, D\'Arby brothers, Vanilla Ice, Cream, Nukesaku, Alessi, Mariah, Bastet, Midler, High Priestess, N\'Doul, Geb, Oingo, Khnum, Anubis, Nena, The Lovers, Steely Dan, J. Geil, Hanged Man', inline: false },
-      { name: 'Diamond Is Unbreakable', value: 'Josuke, Crazy Diamond, Okuyasu, The Hand, Rohan, Heaven\'s Door, Koichi, Echoes, Kira, Killer Queen, Hayato, Yukako, Tonio, Keicho, Bad Company, Akira, Red Hot Chili Pepper, Toyohiro, Super Fly, Yoshihiro, Stray Cat', inline: false },
-      { name: 'Golden Wind', value: 'Giorno, Gold Experience, Bucciarati, Sticky Fingers, Mista, Sex Pistols, Narancia, Aerosmith, Abbacchio, Moody Blues, Fugo, Purple Haze, Diavolo, King Crimson, Trish, Spice Girl, Risotto, Metallica, Ghiaccio, White Album, Melone, Baby Face, Formaggio, Little Feet, Illuso, Man in the Mirror, Prosciutto, The Grateful Dead, Pesci, Beach Boy, Squalo, Clash, Tiziano, Talking Head, Cioccolata, Green Day, Secco, Oasis', inline: false },
-      { name: 'Stone Ocean', value: 'Jolyne, Ermes, Foo Fighters, Weather Report, Emporio, Pucci, Whitesnake, C-Moon, Made in Heaven, Stone Free, Kiss, Burning Down the House, Diver Down, Miraschon, Gwess, Goo Goo Dolls, Narciso Anasui', inline: false },
-      { name: 'Steel Ball Run', value: 'Johnny, Gyro, Funny Valentine, Diego Brando, Scary Monsters, Hot Pants, Cream Starter, Mountain Tim, Sandman, In a Silent Way, Wekapipo, Magent Magent, Axl RO, Civil War, Lucy Steel, Tusk, Ball Breaker, D4C', inline: false },
-      { name: 'Jojolion', value: 'Josuke (Gappy), Yasuho, Tooru, Soft & Wet, Paisley Park, Wonder of U, Jobin, Speed King, Norisuke, Tsurugi, Paper Moon King, Daiya, California King Bed, Joshu, Nut King Call, Akefu, Ojiro, Fun Fun Fun, Doremifasolati Do', inline: false },
-    ],
     footer: { text: 'Your path awaits, Stand user...' },
     timestamp: new Date().toISOString()
   });
+
+  // Phantom Blood
+  await send(ids.role_select, {
+    title: 'Phantom Blood',
+    description: 'Part 1 — The origin of the Joestar bloodline and their eternal rivalry with DIO.',
+    color: 0x1E3A5F
+  }, makeButtons(['Jonathan Joestar', 'Dio Brando', 'Will A. Zeppeli', 'Speedwagon', 'Erina Pendleton', 'George Joestar I', 'Bruford', 'Tarkus', 'Dire', 'Straizo', 'Poco', 'Wang Chan']));
+
+  // Battle Tendency
+  await send(ids.role_select, {
+    title: 'Battle Tendency',
+    description: 'Part 2 — Joseph Joestar vs the Pillar Men. The pinnacle of Hamon.',
+    color: 0x228B22
+  }, makeButtons(['Joseph Joestar', 'Caesar Zeppeli', 'Lisa Lisa', 'Wamuu', 'Kars', 'Esidisi', 'Stroheim', 'Suzi Q', 'Messina', 'Loggins']));
+
+  // Stardust Crusaders
+  await send(ids.role_select, {
+    title: 'Stardust Crusaders',
+    description: 'Part 3 — The journey to Egypt. Jotaro, Polnareff, Kakyoin, Avdol, Iggy vs DIO.',
+    color: 0x000080
+  }, makeButtons(['Jotaro Kujo', 'Star Platinum', 'Jean Pierre Polnareff', 'Silver Chariot', 'Noriaki Kakyoin', 'Hierophant Green', 'Muhammad Avdol', 'Magician Red', 'Iggy', 'The Fool', 'DIO', 'The World', 'Old Joseph', 'Hermit Purple', 'Hol Horse', 'Emperor', 'Boingo', 'Tohth', "Daniel D'Arby", "Telence D'Arby", 'Vanilla Ice', 'Cream', 'Nukesaku', 'Alessi', 'Mariah']));
+
+  await send(ids.role_select, {
+    title: 'Stardust Crusaders (cont.)',
+    description: 'More Stand users from the journey to Egypt.',
+    color: 0x000080
+  }, makeButtons(['Bastet', 'Midler', 'High Priestess', "N'Doul", 'Geb', 'Oingo', 'Khnum', 'Anubis', 'Nena', 'The Lovers', 'Steely Dan', 'J. Geil', 'Hanged Man']));
+
+  // Diamond Is Unbreakable
+  await send(ids.role_select, {
+    title: 'Diamond Is Unbreakable',
+    description: 'Part 4 — The quiet town of Morioh and its deadly secrets.',
+    color: 0x003366
+  }, makeButtons(['Josuke Higashikata', 'Crazy Diamond', 'Okuyasu Nijimura', 'The Hand', 'Rohan Kishibe', "Heaven's Door", 'Koichi Hirose', 'Echoes', 'Yoshikage Kira', 'Killer Queen', 'Hayato Kawajiri', 'Yukako Yamagishi', 'Tonio Trussardi', 'Keicho Nijimura', 'Bad Company', 'Akira Otoishi', 'Red Hot Chili Pepper', 'Toyohiro Kanedaichi', 'Super Fly', 'Yoshihiro Kira', 'Stray Cat']));
+
+  // Golden Wind
+  await send(ids.role_select, {
+    title: 'Golden Wind',
+    description: 'Part 5 — Giorno Giovanna and Passione. The gang-star rises.',
+    color: 0x9B59B6
+  }, makeButtons(['Giorno Giovanna', 'Gold Experience', 'Bruno Bucciarati', 'Sticky Fingers', 'Guido Mista', 'Sex Pistols', 'Narancia Ghirga', 'Aerosmith', 'Leone Abbacchio', 'Moody Blues', 'Pannacotta Fugo', 'Purple Haze', 'Diavolo', 'King Crimson', 'Trish Una', 'Spice Girl', 'Risotto Nero', 'Metallica', 'Ghiaccio', 'White Album', 'Melone', 'Baby Face', 'Formaggio', 'Little Feet', 'Illuso']));
+
+  await send(ids.role_select, {
+    title: 'Golden Wind (cont.)',
+    description: 'More Passione members and enemies.',
+    color: 0x9B59B6
+  }, makeButtons(['Man in the Mirror', 'Prosciutto', 'The Grateful Dead', 'Pesci', 'Beach Boy', 'Squalo', 'Clash', 'Tiziano', 'Talking Head', 'Cioccolata', 'Green Day', 'Secco', 'Oasis']));
+
+  // Stone Ocean
+  await send(ids.role_select, {
+    title: 'Stone Ocean',
+    description: 'Part 6 — Jolyne Cujoh vs Enrico Pucci. The fate of the Joestar bloodline.',
+    color: 0x27AE60
+  }, makeButtons(['Jolyne Cujoh', 'Ermes Costello', 'Foo Fighters', 'Weather Report', 'Emporio Alnino', 'Enrico Pucci', 'Whitesnake', 'C-Moon', 'Made in Heaven', 'Stone Free', 'Kiss', 'Burning Down the House', 'Diver Down', 'Miraschon', 'Gwess', 'Goo Goo Dolls', 'Narciso Anasui', "Jolyne's Father", 'Green Green Grass of Home']));
+
+  // Steel Ball Run
+  await send(ids.role_select, {
+    title: 'Steel Ball Run',
+    description: 'Part 7 — Johnny Joestar and Gyro Zeppeli in the race of a lifetime.',
+    color: 0x4169E1
+  }, makeButtons(['Johnny Joestar', 'Gyro Zeppeli', 'Funny Valentine', 'Diego Brando', 'Scary Monsters', 'Hot Pants', 'Cream Starter', 'Mountain Tim', 'Oh! Lonesome Me', 'Sandman', 'In a Silent Way', 'Wekapipo', 'Magent Magent', 'Axl RO', 'Civil War', 'Scarlet Valentine', 'Lucy Steel', 'Tusk', 'Ball Breaker', 'D4C']));
+
+  // Jojolion
+  await send(ids.role_select, {
+    title: 'Jojolion',
+    description: 'Part 8 — Josuke Higashikata and the mystery of the Locacaca.',
+    color: 0x9932CC
+  }, makeButtons(['Josuke Higashikata (Jojolion)', 'Yasuho Hirose', 'Tooru', 'Soft & Wet', 'Paisley Park', 'Wonder of U', 'Jobin Higashikata', 'Speed King', 'Norisuke Higashikata', 'Tsurugi Higashikata', 'Paper Moon King', 'Daiya Higashikata', 'California King Bed', 'Joshu Higashikata', 'Nut King Call', 'Akefu Satoru', 'Ojiro Kazo', 'Fun Fun Fun', 'Doremifasolati Do']));
 
   // ══════════════════════════════════════════════════
   // 📋 MEMBER LIST

@@ -1,9 +1,14 @@
-const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
-const PUBLIC_KEY = process.env.DISCORD_APPLICATION_PUBLIC_KEY || '';
+const ENCODED_BOT_TOKEN = process.env.BUILDER_BOT_TOKEN || '';
+const PUBLIC_KEY = process.env.BUILDER_PUBLIC_KEY || '';
 const crypto = require('crypto');
 
+let DECODED_TOKEN = '';
+function decodeToken(encoded) {
+  try { return Buffer.from(encoded, 'base64').toString('utf8'); } catch { return ''; }
+}
+
 function getHeaders() {
-  return { Authorization: `Bot ${BOT_TOKEN}`, 'Content-Type': 'application/json' };
+  return { Authorization: `Bot ${DECODED_TOKEN}`, 'Content-Type': 'application/json' };
 }
 
 async function api(method, path, body) {
@@ -144,7 +149,7 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: 'Invalid signature' });
   }
 
-  if (!BOT_TOKEN) return res.status(500).json({ error: 'No token' });
+  try { DECODED_TOKEN = decodeToken(ENCODED_BOT_TOKEN); } catch { return res.status(500).json({ error: 'Token failed' }); }
 
   const { type, data, member, guild_id } = req.body;
 
