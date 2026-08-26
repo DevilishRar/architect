@@ -36,9 +36,12 @@ const COLORS = { gold: 0xFFD700, dark: 0x2C2F33 };
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
-  const authHeader = req.headers.authorization || '';
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  if (CRON_SECRET) {
+    const authHeader = req.headers.authorization || '';
+    const queryToken = req.query?.token || '';
+    if (authHeader !== `Bearer ${CRON_SECRET}` && queryToken !== CRON_SECRET) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
   }
 
   if (!BOT_TOKEN) return res.status(500).json({ error: 'No bot token' });
