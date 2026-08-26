@@ -1,5 +1,6 @@
 const BOT_TOKEN = process.env.STAR_PLATINUM_TOKEN || '';
 const PUBLIC_KEY = process.env.STAR_PLATINUM_PUBLIC_KEY || '';
+const nacl = require('tweetnacl');
 const crypto = require('crypto');
 
 const APP_ID = '1542117577998733402';
@@ -114,11 +115,10 @@ const CHAR_ROLES = {
 function verifySignature(signature, timestamp, body) {
   if (!PUBLIC_KEY) return true;
   try {
-    const verify = crypto.createVerify('SHA256');
-    verify.update(timestamp + body);
-    return verify.verify(
-      { key: `-----BEGIN PUBLIC KEY-----\n${PUBLIC_KEY}\n-----END PUBLIC KEY-----`, format: 'der', type: 'spki' },
-      Buffer.from(signature, 'hex')
+    return nacl.sign.detached.verify(
+      Buffer.from(timestamp + body),
+      Buffer.from(signature, 'hex'),
+      Buffer.from(PUBLIC_KEY, 'hex')
     );
   } catch { return false; }
 }

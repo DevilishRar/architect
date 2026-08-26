@@ -4,5 +4,8 @@
   "description": "Ambrosia Discord server builder",
   "main": "console-builder.js",
   "scripts": {},
-  "dependencies": {}
+  "dependencies": {
+    "tweetnacl": "^1.0.3"
+  }
+}
 }
