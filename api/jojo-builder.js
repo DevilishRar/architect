@@ -476,7 +476,7 @@ module.exports = async function handler(req, res) {
     // ── PHASE 2: Create roles (split: sub param selects chunk) ──
     if (phase === 2) {
       const sub = body.sub || 0;
-      const perSub = 50;
+      const perSub = 20;
       const start = sub * perSub;
       const chunk = CONFIG.roles.slice(start, start + perSub);
 
@@ -488,6 +488,7 @@ module.exports = async function handler(req, res) {
           hoist: def.hoist, mentionable: def.mentionable
         }).catch(() => null);
         if (role) partialIds[def.name] = role.id;
+        await new Promise(r => setTimeout(r, 50));
       }
 
       const elapsed = ((Date.now() - t) / 1000).toFixed(1);
