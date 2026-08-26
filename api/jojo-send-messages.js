@@ -143,9 +143,9 @@ module.exports = async function handler(req, res) {
   // 📜 RULES
   // ══════════════════════════════════════════════════
   await send(envIds.rules, {
-    title: 'Server Rules',
+    title: '📜 Server Rules',
     description: 'Welcome to the JoJo\'s Bizarre Adventure Discord server! Please read these rules before participating.',
-    color: COLORS.phantomBlood,
+    color: 0x5865F2,
     image: { url: GIFS.jjbaGeneral },
     fields: [
       { name: 'Rule 1 — Respect Everyone', value: 'This is a friend group. Treat everyone like family. No harassment, hate speech, or personal attacks.', inline: false },

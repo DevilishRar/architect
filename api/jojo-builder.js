@@ -515,6 +515,24 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    // ── REGISTER SLASH COMMANDS ──
+    log.push('Registering slash commands...');
+    const commands = [
+      { name: 'help', description: 'Show all bot commands' },
+      { name: 'roles', description: 'List all available character roles' },
+      { name: 'role', description: 'Get a character role', options: [{ name: 'character', description: 'Character name (e.g. jotaro-kujo, Giorno Giovanna)', type: 3, required: true, autocomplete: true }] },
+      { name: 'server', description: 'Show server info' },
+      { name: 'avatar', description: "Get a user's avatar", options: [{ name: 'user', description: 'User to get avatar of', type: 6, required: false }] },
+      { name: '8ball', description: 'Ask the Stand Arrow', options: [{ name: 'question', description: 'Your question', type: 3, required: true }] },
+      { name: 'poll', description: 'Create a yes/no poll', options: [{ name: 'question', description: 'Poll question', type: 3, required: true }] },
+    ];
+    try {
+      const cmdRes = await api('PUT', `/applications/${botUser.id}/guilds/${guildId}/commands`, commands);
+      log.push(`Registered ${Array.isArray(cmdRes) ? cmdRes.length : 0} slash commands`);
+    } catch (e) {
+      log.push(`Warning: Command registration failed (${e.message})`);
+    }
+
     // ── OUTPUT ──
     const elapsed = ((Date.now() - t) / 1000).toFixed(1);
     log.push(`Done in ${elapsed}s`);
