@@ -1,4 +1,4 @@
-const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
+const BOT_TOKEN = process.env.STAR_PLATINUM_TOKEN || '';
 const SECRET = 'jojo-send-messages-2026';
 
 function getHeaders() {
@@ -91,15 +91,11 @@ module.exports = async function handler(req, res) {
   // Fallback: read from env vars if ids not in request body
   const envIds = {
     rules: ids.rules || process.env.RULES_CHANNEL_ID,
-    faq: ids.faq || process.env.FAQ_CHANNEL_ID,
     announcements: ids.announcements || process.env.ANNOUNCEMENTS_CHANNEL_ID,
-    links: ids.links || process.env.LINKS_CHANNEL_ID,
     role_select: ids.role_select || process.env.ROLESELECT_CHANNEL_ID || process.env.ROLE_SELECT_CHANNEL_ID,
-    member_list: ids.member_list || process.env.MEMBERLIST_CHANNEL_ID,
     general: ids.general || process.env.GENERAL_CHANNEL_ID,
     vrchat_chat: ids.vrchat_chat || process.env.VRCHATCHAT_CHANNEL_ID || process.env.VRCHAT_CHAT_CHANNEL_ID,
     content_ideas: ids.content_ideas || process.env.CONTENTIDEAS_CHANNEL_ID || process.env.CONTENT_IDEAS_CHANNEL_ID,
-    dnd_corner: ids.dnd_corner || process.env.DNDCORNER_CHANNEL_ID,
     bot_commands: ids.bot_commands || process.env.BOTCOMMANDS_CHANNEL_ID || process.env.BOT_COMMANDS_CHANNEL_ID,
     general_chat: ids.general_chat || process.env.GENERALCHAT_CHANNEL_ID || process.env.GENERAL_CHAT_CHANNEL_ID,
     music_share: ids.music_share || process.env.MUSICSHARE_CHANNEL_ID || process.env.MUSIC_SHARE_CHANNEL_ID,
@@ -161,26 +157,6 @@ module.exports = async function handler(req, res) {
   });
 
   // ══════════════════════════════════════════════════
-  // ❓ FAQ
-  // ══════════════════════════════════════════════════
-  await send(envIds.faq, {
-    title: 'Frequently Asked Questions',
-    description: 'Everything you need to know about this server.',
-    color: COLORS.stardust,
-    image: { url: GIFS.jotaroStarPlatinum },
-    fields: [
-      { name: 'Q: What is this server?', value: 'A: This is a JoJo\'s Bizarre Adventure friend group server. We met in VRChat and decided to make a community.', inline: false },
-      { name: 'Q: How do I get a character role?', value: 'A: Go to role-select and click the button for your favorite character! Each role has a unique color.', inline: false },
-      { name: 'Q: What content do you make?', value: 'A: Our main series is "JoJo Bros go to the Backrooms" and other VRChat adventures.', inline: false },
-      { name: 'Q: Can I join VRChat sessions?', value: 'A: Absolutely! Check vrchat-chat for session announcements.', inline: false },
-      { name: 'Q: Is this server only for JoJo fans?', value: 'A: Primarily yes, but we welcome anyone who vibes with the group.', inline: false },
-      { name: 'Q: How do I become a content creator here?', value: 'A: Just suggest ideas in content-ideas and hop in when we record.', inline: false },
-    ],
-    footer: { text: 'Yare yare daze...' },
-    timestamp: new Date().toISOString()
-  });
-
-  // ══════════════════════════════════════════════════
   // 📢 ANNOUNCEMENTS
   // ══════════════════════════════════════════════════
   await send(envIds.announcements, {
@@ -193,22 +169,6 @@ module.exports = async function handler(req, res) {
       { name: 'Content Creation', value: 'We make YouTube content together — JoJo Bros go to the Backrooms and more!', inline: true },
       { name: 'JoJo Themed', value: 'Every member gets a JoJo character role with a unique color.', inline: true },
       { name: 'About Us', value: 'We\'re a group of friends who love JoJo, VRChat, and making content together. No drama, no stress — just vibes.', inline: false },
-    ],
-    footer: { text: 'Yare yare daze...' },
-    timestamp: new Date().toISOString()
-  });
-
-  // ══════════════════════════════════════════════════
-  // 🔗 LINKS
-  // ══════════════════════════════════════════════════
-  await send(envIds.links, {
-    title: 'Official Links',
-    description: 'All the important links for the JoJo Bros.',
-    color: COLORS.purple,
-    image: { url: GIFS.jjbaAdventure },
-    fields: [
-      { name: 'YouTube', value: '[JoJo Bros YouTube](https://youtube.com/@jojobros) — Our content channel!', inline: false },
-      { name: 'VRChat', value: 'Join our VRChat world sessions! Check vrchat-chat for schedules.', inline: false },
     ],
     footer: { text: 'Yare yare daze...' },
     timestamp: new Date().toISOString()
@@ -297,22 +257,6 @@ module.exports = async function handler(req, res) {
   }, makeButtons(['Josuke Higashikata (Jojolion)', 'Yasuho Hirose', 'Tooru', 'Soft & Wet', 'Paisley Park', 'Wonder of U', 'Jobin Higashikata', 'Speed King', 'Norisuke Higashikata', 'Tsurugi Higashikata', 'Paper Moon King', 'Daiya Higashikata', 'California King Bed', 'Joshu Higashikata', 'Nut King Call', 'Akefu Satoru', 'Ojiro Kazo', 'Fun Fun Fun', 'Doremifasolati Do']));
 
   // ══════════════════════════════════════════════════
-  // 📋 MEMBER LIST
-  // ══════════════════════════════════════════════════
-  await send(envIds.member_list, {
-    title: 'Member List',
-    description: 'Check the member list on the right to see everyone\'s character roles!\n\nEach member has a unique color based on their JoJo character.',
-    color: COLORS.accent,
-    image: { url: GIFS.dioPointing },
-    fields: [
-      { name: 'Our Crew', value: 'We\'re all Stand users in this server. Your role color represents your character.', inline: false },
-      { name: 'Tip', value: 'Click the member list (right sidebar) to see everyone\'s roles and colors.', inline: false },
-    ],
-    footer: { text: 'Yare yare daze...' },
-    timestamp: new Date().toISOString()
-  });
-
-  // ══════════════════════════════════════════════════
   // 🥽 VRCHAT CHAT
   // ══════════════════════════════════════════════════
   await send(envIds.vrchat_chat, {
@@ -345,21 +289,6 @@ module.exports = async function handler(req, res) {
   });
 
   // ══════════════════════════════════════════════════
-  // 🎲 DND CORNER
-  // ══════════════════════════════════════════════════
-  await send(envIds.dnd_corner, {
-    title: 'D&D Corner',
-    description: 'Our tabletop corner! We occasionally run D&D sessions.',
-    color: COLORS.battleTendency,
-    image: { url: GIFS.starPlatinumOra },
-    fields: [
-      { name: 'Campaigns', value: 'Check here for session announcements and character sheets.', inline: false },
-    ],
-    footer: { text: 'Yare yare daze...' },
-    timestamp: new Date().toISOString()
-  });
-
-  // ══════════════════════════════════════════════════
   // ☕ GENERAL CHAT
   // ══════════════════════════════════════════════════
   await send(envIds.general, {
@@ -367,6 +296,15 @@ module.exports = async function handler(req, res) {
     description: 'Welcome to the main hangout! Talk about anything here.',
     color: COLORS.stardust,
     image: { url: GIFS.jotaroJolyne },
+    footer: { text: 'Yare yare daze...' },
+    timestamp: new Date().toISOString()
+  });
+
+  await send(envIds.general_chat, {
+    title: 'Hangout',
+    description: 'The chill zone. Talk about whatever you want.',
+    color: COLORS.general,
+    image: { url: GIFS.jjbaMeme },
     footer: { text: 'Yare yare daze...' },
     timestamp: new Date().toISOString()
   });
