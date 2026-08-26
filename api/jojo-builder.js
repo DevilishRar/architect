@@ -408,19 +408,9 @@ function chPerms(roleIds, ch, guildId, botUserId) {
     ow.push({ id: everyone, type: 0, allow: bit(P.VIEW, P.SEND, P.READ_HIST), deny: NONE });
   }
 
-  // ── Per-role overwrites ──
-  for (const [name, id] of Object.entries(roleIds)) {
-    if (name === 'Owner') {
-      ow.push({ id, type: 0, allow: FULL, deny: '0' });
-    } else if (ch.type === 2) {
-      ow.push({ id, type: 0, allow: FULL_VOICE, deny: '0' });
-    } else if (isDecor) {
-      ow.push({ id, type: 0, allow: VIEW, deny: '0' });
-    } else if (n.includes('rules') || n.includes('faq') || n.includes('announcements') || n.includes('links') || n.includes('member-list') || n.includes('role-select')) {
-      ow.push({ id, type: 0, allow: VIEW, deny: '0' });
-    } else {
-      ow.push({ id, type: 0, allow: SEND, deny: '0' });
-    }
+  // ── Only Owner role gets explicit overwrite (character roles are cosmetic) ──
+  if (roleIds['Owner']) {
+    ow.push({ id: roleIds['Owner'], type: 0, allow: FULL, deny: '0' });
   }
 
   // ── Bot user: FULL on everything ──
