@@ -619,22 +619,47 @@ module.exports = async function handler(req, res) {
       const FULL_PERMS = bit(P.VIEW, P.READ_HIST, P.SEND, P.EMBED, P.ATTACH, P.MANAGE_MSG, P.MENTION, P.ADD_REACTIONS, P.SEND_THREADS, P.CREATE_THREADS, P.SEND_POLLS, P.MANAGE_CH, P.MANAGE_ROLES, P.ADMIN).toString();
 
       log.push('Adding Star Platinum bot permissions to all channels...');
-      const allCh = await api('GET', `/guilds/${guildId}/channels`);
-      let fixed = 0;
 
-      for (const ch of (allCh || [])) {
+      // Get channels with full error handling
+      const chRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
+        headers: { Authorization: `Bot ${DISCORD_TOKEN}`, 'Content-Type': 'application/json' }
+      });
+      const allCh = await chRes.json();
+
+      if (!Array.isArray(allCh)) {
+        log.push(`ERROR fetching channels: ${JSON.stringify(allCh).slice(0, 200)}`);
+        return res.status(200).json({ success: true, phase: 5, complete: true, log });
+      }
+
+      log.push(`Found ${allCh.length} channels to patch`);
+      let fixed = 0, failed = 0;
+
+      for (const ch of allCh) {
         const ows = ch.permission_overwrites || [];
         const hasSP = ows.some(o => o.id === SP_ID);
         if (hasSP) continue;
 
         const newOws = [...ows, { id: SP_ID, type: 1, allow: FULL_PERMS, deny: '0' }];
-        const r = await api('PATCH', `/channels/${ch.id}`, { permission_overwrites: newOws });
-        if (r) { fixed++; log.push(`  Fixed: ${ch.name}`); }
-        await new Promise(r => setTimeout(r, 200));
+
+        const patchRes = await fetch(`https://discord.com/api/v10/channels/${ch.id}`, {
+          method: 'PATCH',
+          headers: { Authorization: `Bot ${DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ permission_overwrites: newOws })
+        });
+
+        if (patchRes.ok) {
+          fixed++;
+          log.push(`  OK: ${ch.name}`);
+        } else {
+          const err = await patchRes.text();
+          failed++;
+          log.push(`  FAIL: ${ch.name} - ${patchRes.status} ${err.slice(0, 150)}`);
+        }
+        await new Promise(r => setTimeout(r, 300));
       }
 
       const elapsed = ((Date.now() - t) / 1000).toFixed(1);
-      log.push(`Permissions fixed in ${elapsed}s — patched ${fixed} channels`);
+      log.push(`Permissions done in ${elapsed}s — fixed ${fixed}, failed ${failed}`);
       return res.status(200).json({ success: true, phase: 5, complete: true, log, elapsed: elapsed + 's' });
     }
 

@@ -304,34 +304,22 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ type: 4, data: { content: 'Unknown command.', flags: 64 } });
   }
 
-  // MESSAGE_COMPONENT (buttons) — DEFERRED RESPONSE
+  // MESSAGE_COMPONENT (buttons)
   if (type === 3) {
     const customId = data.custom_id;
     if (customId.startsWith('role_')) {
       const charKey = customId.replace('role_', '');
       const roleName = CHAR_ROLES[charKey];
 
-      // Respond immediately with deferred update
       if (!roleName) {
-        return res.status(200).json({
-          type: 6,
-          data: { content: '❌ Role not found.', flags: 64 }
-        });
+        return res.status(200).json({ type: 4, data: { content: '❌ Role not found.', flags: 64 } });
       }
 
-      // Acknowledge immediately, then do work
-      res.status(200).json({ type: 6 });
-
-      // Do the API calls after responding
       try {
         const roles = await api('GET', `/guilds/${guild_id}/roles`);
         const role = roles.find(r => r.name === roleName);
         if (!role) {
-          await api('PATCH', `/webhooks/${APP_ID}/${interactionToken}/messages/@original`, {
-            content: '❌ Role not found on server.',
-            embeds: []
-          });
-          return;
+          return res.status(200).json({ type: 4, data: { content: `❌ Role "${roleName}" not found on server.`, flags: 64 } });
         }
 
         const memberRoles = member.roles || [];
@@ -345,20 +333,21 @@ module.exports = async function handler(req, res) {
         }
         await api('PUT', `/guilds/${guild_id}/members/${member.user.id}/roles/${role.id}`);
 
-        await api('PATCH', `/webhooks/${APP_ID}/${interactionToken}/messages/@original`, {
-          embeds: [{
-            title: 'Role Updated!',
-            description: `You are now **${roleName}**!`,
-            color: role.color || 0x5865F2,
-          }]
+        return res.status(200).json({
+          type: 4,
+          data: {
+            embeds: [{
+              title: 'Role Updated!',
+              description: `You are now **${roleName}**!`,
+              color: role.color || 0x5865F2,
+              footer: { text: 'Yare yare daze...' }
+            }],
+            flags: 64
+          }
         });
       } catch (e) {
-        await api('PATCH', `/webhooks/${APP_ID}/${interactionToken}/messages/@original`, {
-          content: '❌ Failed: ' + e.message,
-          embeds: []
-        }).catch(() => null);
+        return res.status(200).json({ type: 4, data: { content: '❌ Failed: ' + e.message, flags: 64 } });
       }
-      return;
     }
   }
 
