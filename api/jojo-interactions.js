@@ -1,9 +1,24 @@
 const BOT_TOKEN = process.env.STAR_PLATINUM_TOKEN || '';
 const PUBLIC_KEY = process.env.STAR_PLATINUM_PUBLIC_KEY || '';
 const nacl = require('tweetnacl');
-const crypto = require('crypto');
 
 const APP_ID = '1542117577998733402';
+
+const DIVIDERS = {
+  '─── PHANTOM BLOOD ───': ['jonathan-joestar','dio-brando','will-zeppeli','speedwagon','erina-pendleton','george-joestar-i','bruford','tarkus','dire','straizo','poco','wang-chan'],
+  '─── BATTLE TENDENCY ───': ['joseph-joestar','caesar-zeppeli','lisa-lisa','wamuu','kars','esidisi','stroheim','suzi-q','messina','loggins'],
+  '─── STARDUST CRUSADERS ───': ['jotaro-kujo','star-platinum','polnareff','silver-chariot','kakyoin','hierophant-green','avdol','magician-red','iggy','the-fool','dio-3','the-world','old-joseph','hermit-purple','hol-horse','emperor','boingo','tohth','daniel-darby','telence-darby','vanilla-ice','cream','nukesaku','alessi','mariah','bastet','midler','high-priestess','ndoul','geb','oingo','khnum','anubis','nena','the-lovers','steely-dan','j-geil','hanged-man'],
+  '─── DIAMOND IS UNBREAKABLE ───': ['josuke','crazy-diamond','okuyasu','the-hand','rohan','heavens-door','koichi','echoes','kira','killer-queen','hayato','yukako','tonio','cure-kisses','keicho','bad-company','akira','red-hot-chili-pepper','toyohiro','super-fly','yoshihiro','stray-cat'],
+  '─── GOLDEN WIND ───': ['giorno','gold-experience','bucciarati','sticky-fingers','mista','sex-pistols','narancia','aerosmith','abbacchio','moody-blues','fugo','purple-haze','diavolo','king-crimson','trish','spice-girl','risotto','metallica','ghiaccio','white-album','melone','baby-face','formaggio','little-feet','illuso','man-in-the-mirror','prosciutto','the-grateful-dead','pesci','beach-boy','squalo','clash','tiziano','talking-head','cioccolata','green-day','secco','oasis'],
+  '─── STONE OCEAN ───': ['jolyne','ermes','foo-fighters','weather-report','emporio','pucci','green-grass','whitesnake','c-moon','made-in-heaven','stone-free','kiss','burning-down','diver-down','miraschon','gwess','goo-goo-dolls','anasui','jolyne-s-father'],
+  '─── STEEL BALL RUN ───': ['johnny-joestar','gyro-zeppeli','funny-valentine','diego-brando','scary-monsters','hot-pants','cream-starter','mountain-tim','oh-lonesome','sandman','in-a-silent-way','wekapipo','magent-magent','axl-ro','civil-war','scarlet-valentine','lucy-steel','tusk','ball-breaker','d4c'],
+  '─── JOJOLION ───': ['josuke-higashikata-jojolion','yasuho','tooru','soft-wet','paisley-park','wonder-of-u','jobin','speed-king','norisuke','tsurugi','paper-moon-king','daiya','california-king-bed','joshu','nut-king-call','akefu','ojiro','fun-fun-fun','doremifasolati-do'],
+};
+
+const CHAR_PARTS = {};
+for (const [div, chars] of Object.entries(DIVIDERS)) {
+  for (const c of chars) CHAR_PARTS[c] = div;
+}
 
 function getHeaders() {
   return { Authorization: `Bot ${BOT_TOKEN}`, 'Content-Type': 'application/json' };
@@ -18,7 +33,6 @@ async function api(method, path, body) {
   return res.json();
 }
 
-// ── CHARACTER ROLE MAP ──
 const CHAR_ROLES = {
   'jonathan-joestar': 'Jonathan Joestar', 'dio-brando': 'Dio Brando',
   'will-zeppeli': 'Will A. Zeppeli', 'speedwagon': 'Speedwagon',
@@ -89,7 +103,7 @@ const CHAR_ROLES = {
   'burning-down': 'Burning Down the House', 'diver-down': 'Diver Down',
   'miraschon': 'Miraschon', 'gwess': 'Gwess',
   'goo-goo-dolls': 'Goo Goo Dolls', 'anasui': 'Narciso Anasui',
-  'jolyne-father': "Jolyne's Father",
+  'jolyne-s-father': "Jolyne's Father",
   'johnny-joestar': 'Johnny Joestar', 'gyro-zeppeli': 'Gyro Zeppeli',
   'funny-valentine': 'Funny Valentine', 'diego-brando': 'Diego Brando',
   'scary-monsters': 'Scary Monsters', 'hot-pants': 'Hot Pants',
@@ -100,7 +114,7 @@ const CHAR_ROLES = {
   'civil-war': 'Civil War', 'scarlet-valentine': 'Scarlet Valentine',
   'lucy-steel': 'Lucy Steel', 'tusk': 'Tusk',
   'ball-breaker': 'Ball Breaker', 'd4c': 'D4C',
-  'josuke-jojolion': 'Josuke Higashikata (Jojolion)', 'yasuho': 'Yasuho Hirose',
+  'josuke-higashikata-jojolion': 'Josuke Higashikata (Jojolion)', 'yasuho': 'Yasuho Hirose',
   'tooru': 'Tooru', 'soft-wet': 'Soft & Wet',
   'paisley-park': 'Paisley Park', 'wonder-of-u': 'Wonder of U',
   'jobin': 'Jobin Higashikata', 'speed-king': 'Speed King',
@@ -109,7 +123,7 @@ const CHAR_ROLES = {
   'california-king-bed': 'California King Bed', 'joshu': 'Joshu Higashikata',
   'nut-king-call': 'Nut King Call', 'akefu': 'Akefu Satoru',
   'ojiro': 'Ojiro Kazo', 'fun-fun-fun': 'Fun Fun Fun',
-  'doremifasolati': 'Doremifasolati Do',
+  'doremifasolati-do': 'Doremifasolati Do',
 };
 
 function verifySignature(signature, timestamp, body) {
@@ -139,10 +153,8 @@ module.exports = async function handler(req, res) {
 
   const { type, data, member, guild_id, token: interactionToken } = req.body;
 
-  // PING
   if (type === 1) return res.status(200).json({ type: 1 });
 
-  // APPLICATION_COMMAND
   if (type === 2) {
     const cmd = data.name;
 
@@ -199,22 +211,46 @@ module.exports = async function handler(req, res) {
         if (!role) return res.status(200).json({ type: 4, data: { content: '❌ Role not found on server.', flags: 64 } });
 
         const memberRoles = member.roles || [];
+        const allCharRoleNames = Object.values(CHAR_ROLES);
         const charRoleIds = [];
-        for (const rName of Object.values(CHAR_ROLES)) {
+        for (const rName of allCharRoleNames) {
           const r = roles.find(x => x.name === rName);
           if (r && memberRoles.includes(r.id)) charRoleIds.push(r.id);
         }
         if (charRoleIds.length) {
           await api('DELETE', `/guilds/${guild_id}/members/${member.user.id}/roles/${charRoleIds.join(',')}`);
         }
-        await api('PUT', `/guilds/${guild_id}/members/${member.user.id}/roles/${role.id}`);
 
+        const addRoles = [role.id];
+
+        const dividerName = CHAR_PARTS[charName];
+        if (dividerName) {
+          const dividerRole = roles.find(r => r.name === dividerName);
+          if (dividerRole && !memberRoles.includes(dividerRole.id)) {
+            addRoles.push(dividerRole.id);
+          }
+          const allDividerNames = Object.keys(DIVIDERS);
+          for (const dName of allDividerNames) {
+            if (dName !== dividerName) {
+              const oldDiv = roles.find(r => r.name === dName);
+              if (oldDiv && memberRoles.includes(oldDiv.id)) {
+                await api('DELETE', `/guilds/${guild_id}/members/${member.user.id}/roles/${oldDiv.id}`);
+              }
+            }
+          }
+        }
+
+        for (const rid of addRoles) {
+          await api('PUT', `/guilds/${guild_id}/members/${member.user.id}/roles/${rid}`);
+        }
+
+        const dividerMsg = dividerName ? `\nAlso assigned **${dividerName}**` : '';
         return res.status(200).json({
           type: 4,
           data: {
             embeds: [{
               title: 'Role Assigned!',
-              description: `You are now **${roleName}**!`,
+              description: `You are now **${roleName}**!${dividerMsg}`,
               color: role.color || 0x5865F2,
               footer: { text: 'Yare yare daze...' }
             }],
@@ -304,7 +340,6 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ type: 4, data: { content: 'Unknown command.', flags: 64 } });
   }
 
-  // MESSAGE_COMPONENT (buttons)
   if (type === 3) {
     const customId = data.custom_id;
     if (customId.startsWith('role_')) {
@@ -312,7 +347,7 @@ module.exports = async function handler(req, res) {
       const roleName = CHAR_ROLES[charKey];
 
       if (!roleName) {
-        return res.status(200).json({ type: 4, data: { content: '❌ Role not found.', flags: 64 } });
+        return res.status(200).json({ type: 4, data: { content: `❌ Role not found. (key: ${charKey})`, flags: 64 } });
       }
 
       try {
@@ -323,22 +358,46 @@ module.exports = async function handler(req, res) {
         }
 
         const memberRoles = member.roles || [];
+        const allCharRoleNames = Object.values(CHAR_ROLES);
         const charRoleIds = [];
-        for (const rName of Object.values(CHAR_ROLES)) {
+        for (const rName of allCharRoleNames) {
           const r = roles.find(x => x.name === rName);
           if (r && memberRoles.includes(r.id)) charRoleIds.push(r.id);
         }
         if (charRoleIds.length) {
           await api('DELETE', `/guilds/${guild_id}/members/${member.user.id}/roles/${charRoleIds.join(',')}`);
         }
-        await api('PUT', `/guilds/${guild_id}/members/${member.user.id}/roles/${role.id}`);
 
+        const addRoles = [role.id];
+
+        const dividerName = CHAR_PARTS[charKey];
+        if (dividerName) {
+          const dividerRole = roles.find(r => r.name === dividerName);
+          if (dividerRole && !memberRoles.includes(dividerRole.id)) {
+            addRoles.push(dividerRole.id);
+          }
+          const allDividerNames = Object.keys(DIVIDERS);
+          for (const dName of allDividerNames) {
+            if (dName !== dividerName) {
+              const oldDiv = roles.find(r => r.name === dName);
+              if (oldDiv && memberRoles.includes(oldDiv.id)) {
+                await api('DELETE', `/guilds/${guild_id}/members/${member.user.id}/roles/${oldDiv.id}`);
+              }
+            }
+          }
+        }
+
+        for (const rid of addRoles) {
+          await api('PUT', `/guilds/${guild_id}/members/${member.user.id}/roles/${rid}`);
+        }
+
+        const dividerMsg = dividerName ? `\nAlso assigned **${dividerName}**` : '';
         return res.status(200).json({
           type: 4,
           data: {
             embeds: [{
               title: 'Role Updated!',
-              description: `You are now **${roleName}**!`,
+              description: `You are now **${roleName}**!${dividerMsg}`,
               color: role.color || 0x5865F2,
               footer: { text: 'Yare yare daze...' }
             }],
