@@ -6,23 +6,33 @@ function getHeaders() {
   return { Authorization: `Bot ${BOT_TOKEN}`, 'Content-Type': 'application/json' };
 }
 
-async function api(method, path, body, _retries) {
-  if (_retries > 3) return null;
+async function api(method, path, body) {
   const now = Date.now();
   if (now < rateLimitReset) await new Promise(r => setTimeout(r, rateLimitReset - now + 50));
   const opts = { method, headers: getHeaders() };
   if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(`${REST}${path}`, opts);
+  let res;
+  try {
+    res = await fetch(`${REST}${path}`, opts);
+  } catch (e) {
+    return null;
+  }
   const retry = res.headers.get('retry-after');
   if (retry) {
-    const wait = Math.min(parseFloat(retry) * 1000 + 300, 5000);
+    const wait = Math.min(parseFloat(retry) * 1000 + 500, 3000);
     rateLimitReset = Date.now() + wait;
     await new Promise(r => setTimeout(r, wait));
-    return api(method, path, body, (_retries || 0) + 1);
+    opts.headers = getHeaders();
+    if (body) opts.body = JSON.stringify(body);
+    try {
+      res = await fetch(`${REST}${path}`, opts);
+    } catch (e) {
+      return null;
+    }
   }
   if (res.status === 204) return null;
-  if (!res.ok) { const e = await res.text(); throw new Error(`${res.status}: ${e}`); }
-  return res.json();
+  if (!res.ok) return null;
+  try { return await res.json(); } catch { return null; }
 }
 
 function bit() { return String([...arguments].reduce((a, b) => a | b, 0n)); }
@@ -488,9 +498,9 @@ module.exports = async function handler(req, res) {
         const role = await api('POST', `/guilds/${guildId}/roles`, {
           name: def.name, color: def.color, permissions: def.permissions,
           hoist: def.hoist, mentionable: def.mentionable
-        }).catch(() => null);
+        });
         if (role) partialIds[def.name] = role.id;
-        await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, 200));
       }
 
       const elapsed = ((Date.now() - t) / 1000).toFixed(1);
