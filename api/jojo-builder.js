@@ -251,18 +251,16 @@ const CONFIG = {
 
   categories: [
     // ══════════════════════════════════════════
-    // MAIN - SERVER HUB (colored emoji — iconic)
+    // SERVER HUB
     // ══════════════════════════════════════════
     {
       name: '🌹／JOJO\'S BIZARRE ADVENTURE',
       children: [
         { name: '꧁⎝ 𓆩༺✧༻𓆪 ⎠꧂', type: 0, topic: '', decor: true },
-        { name: '✦│rules', type: 0, topic: 'Read before entering — respect the famiglia' },
-        { name: '✦│faq', type: 0, topic: 'Frequently asked questions about the server' },
-        { name: '✦│announcements', type: 0, topic: 'News, updates, and important announcements' },
-        { name: '✦│links', type: 0, topic: 'Useful links — YouTube, Discord, VRChat worlds' },
-        { name: '✦│role-select', type: 0, topic: 'Pick your Stand user! Choose your character role below.' },
-        { name: '✦│member-list', type: 0, topic: 'Who\'s in the crew?' },
+        { name: '📜│rules', type: 0, topic: 'Read before entering' },
+        { name: '📢│announcements', type: 0, topic: 'News and updates' },
+        { name: '🎭│role-select', type: 0, topic: 'Pick your character!' },
+        { name: '💬│general', type: 0, topic: 'General chat' },
         { name: '⫘⫘⫘⫘⫘⫘', type: 0, topic: '', decor: true }
       ]
     },
@@ -270,10 +268,9 @@ const CONFIG = {
     // PART 1 - PHANTOM BLOOD
     // ══════════════════════════════════════════
     {
-      name: '⚔／PHANTOM BLOOD',
+      name: '🔴／PHANTOM BLOOD',
       children: [
-        { name: '✦│phantom-blood-chat', type: 0, topic: 'Part 1 — Jonathan, Dio, Zeppeli, Speedwagon' },
-        { name: '✦│write-of-passage', type: 0, topic: 'Share your favorite Part 1 moments' },
+        { name: '🔴│phantom-blood-chat', type: 0, topic: 'Part 1 — Jonathan, Dio, Zeppeli, Speedwagon' },
       ]
     },
     // ══════════════════════════════════════════
@@ -282,80 +279,80 @@ const CONFIG = {
     {
       name: '⚡／BATTLE TENDENCY',
       children: [
-        { name: '✦│battle-tendency-chat', type: 0, topic: 'Part 2 — Joseph, Caesar, Lisa Lisa, Pillar Men' },
-        { name: '✦│hamon-training', type: 0, topic: 'Training tips and Hamon discussions' },
+        { name: '⚡│battle-tendency-chat', type: 0, topic: 'Part 2 — Joseph, Caesar, Lisa Lisa, Pillar Men' },
       ]
     },
     // ══════════════════════════════════════════
     // PART 3 - STARDUST CRUSADERS
     // ══════════════════════════════════════════
     {
-      name: '★／STARDUST CRUSADERS',
+      name: '🌟／STARDUST CRUSADERS',
       children: [
-        { name: '✦│stardust-chat', type: 0, topic: 'Part 3 — Jotaro, Polnareff, Kakyoin, Avdol, Iggy, DIO' },
-        { name: '✦│stand-discussions', type: 0, topic: 'Talk about Stands, their abilities, and battles' },
+        { name: '🌟│stardust-chat', type: 0, topic: 'Part 3 — Jotaro, Polnareff, Kakyoin, DIO' },
       ]
     },
     // ══════════════════════════════════════════
     // PART 4 - DIAMOND IS UNBREAKABLE
     // ══════════════════════════════════════════
     {
-      name: '◆／DIAMOND IS UNBREAKABLE',
+      name: '💎／DIAMOND IS UNBREAKABLE',
       children: [
-        { name: '✦│diamond-chat', type: 0, topic: 'Part 4 — Josuke, Okuyasu, Rohan, Koichi, Kira' },
-        { name: '✦│morioh-map', type: 0, topic: 'Explore Morioh — locations, secrets, and lore' },
+        { name: '💎│diamond-chat', type: 0, topic: 'Part 4 — Josuke, Rohan, Kira, Morioh' },
       ]
     },
     // ══════════════════════════════════════════
     // PART 5 - GOLDEN WIND
     // ══════════════════════════════════════════
     {
-      name: '♦／GOLDEN WIND',
+      name: '👑／GOLDEN WIND',
       children: [
-        { name: '✦│golden-wind-chat', type: 0, topic: 'Part 5 — Giorno, Bucciarati, Mista, Narancia, Abbacchio, Fugo' },
-        { name: '✦│passione-hq', type: 0, topic: 'Gang-Star discussions and Passione business' },
+        { name: '👑│golden-wind-chat', type: 0, topic: 'Part 5 — Giorno, Bucciarati, Passione' },
       ]
     },
     // ══════════════════════════════════════════
     // PART 6 - STONE OCEAN
     // ══════════════════════════════════════════
     {
-      name: '◎／STONE OCEAN',
+      name: '🌊／STONE OCEAN',
       children: [
-        { name: '✦│stone-ocean-chat', type: 0, topic: 'Part 6 — Jolyne, Ermes, Foo Fighters, Weather, Emporio, Pucci' },
-        { name: '✦│green-dolphin', type: 0, topic: 'Green Dolphin Street Prison talk' },
+        { name: '🌊│stone-ocean-chat', type: 0, topic: 'Part 6 — Jolyne, Pucci, Green Dolphin' },
       ]
     },
     // ══════════════════════════════════════════
     // PART 7 - STEEL BALL RUN
     // ══════════════════════════════════════════
     {
-      name: '⚔／STEEL BALL RUN',
+      name: '🐎／STEEL BALL RUN',
       children: [
-        { name: '✦│sbr-chat', type: 0, topic: 'Part 7 — Johnny, Gyro, Valentine, Diego' },
-        { name: '✦│spin-technique', type: 0, topic: 'The Spin and its applications' },
+        { name: '🐎│sbr-chat', type: 0, topic: 'Part 7 — Johnny, Gyro, Valentine, The Spin' },
       ]
     },
     // ══════════════════════════════════════════
     // PART 8 - JOJOLION
     // ══════════════════════════════════════════
     {
-      name: '☽／JOJOLION',
+      name: '🐚／JOJOLION',
       children: [
-        { name: '✦│jojolion-chat', type: 0, topic: 'Part 8 — Josuke (Gappy), Yasuho, Tooru, Wonder of U' },
-        { name: '✦│locacaca', type: 0, topic: 'The Locacaca Exchange and Rock Humans' },
+        { name: '🐚│jojolion-chat', type: 0, topic: 'Part 8 — Gappy, Yasuho, Tooru, Locacaca' },
       ]
     },
     // ══════════════════════════════════════════
-    // VRCHAT & GAMING
+    // VRCHAT & CHILL
     // ══════════════════════════════════════════
     {
-      name: '◇／VRCHAT & GAMING',
+      name: '🎮／VRCHAT & CHILL',
       children: [
-        { name: '✦│vrchat-chat', type: 0, topic: 'VRChat sessions, worlds, and shenanigans' },
-        { name: '✦│content-ideas', type: 0, topic: 'YouTube content ideas — JoJo Bros go to the Backrooms etc.' },
-        { name: '✦│dnd-corner', type: 0, topic: 'D&D and other tabletop discussions' },
-        { name: '✦│screenshots', type: 0, topic: 'Share your VRChat screenshots and clips' },
+        { name: '🥽│vrchat-chat', type: 0, topic: 'VRChat sessions and worlds' },
+        { name: '🎬│content-ideas', type: 0, topic: 'YouTube content ideas' },
+      ]
+    },
+    // ══════════════════════════════════════════
+    // BOT
+    // ══════════════════════════════════════════
+    {
+      name: '🤖／BOT',
+      children: [
+        { name: '⚡│bot-commands', type: 0, topic: 'Use bot commands here' },
       ]
     },
     // ══════════════════════════════════════════
@@ -364,27 +361,22 @@ const CONFIG = {
     {
       name: '○／HANGOUT',
       children: [
-        { name: '✦│general', type: 0, topic: 'General chat — talk about anything' },
-        { name: '✦│bot-commands', type: 0, topic: 'Use bot commands here' },
-        { name: '✦│music-share', type: 0, topic: 'Share music — JoJo OPs, OSTs, and more' },
-        { name: '✦│media-share', type: 0, topic: 'Share memes, fan art, and edits' },
+        { name: '✦│general-chat', type: 0, topic: 'Talk about anything' },
+        { name: '🎵│music-share', type: 0, topic: 'Share music — JoJo OPs, OSTs, and more' },
+        { name: '🖼│media-share', type: 0, topic: 'Share memes, fan art, and edits' },
       ]
     },
     // ══════════════════════════════════════════
     // VOICE
     // ══════════════════════════════════════════
     {
-      name: '▷／VOICE',
+      name: '🔊／VOICE',
       children: [
-        { name: '▷│general voice', type: 2 },
-        { name: '▷│gaming session', type: 2 },
-        { name: '▷│vrchat lobby', type: 2 },
-        { name: '▷│content recording', type: 2 },
-        { name: '▷│chill zone', type: 2 },
-        { name: '▷│afk', type: 2 }
+        { name: '🔊│general-vc', type: 2 },
+        { name: '🔊│chill-vc', type: 2 },
       ]
-    }
-  ]
+    },
+  ],
 };
 
 // ═══════════════════════════════════════════════════════
@@ -400,7 +392,7 @@ function chPerms(roleIds, ch, guildId, botUserId) {
   // ── @everyone base ──
   if (isDecor) {
     ow.push({ id: everyone, type: 0, allow: VIEW, deny: DENY_ALL_CH });
-  } else if (n.includes('rules') || n.includes('faq') || n.includes('announcements') || n.includes('links') || n.includes('member-list') || n.includes('role-select')) {
+  } else if (n.includes('rules') || n.includes('announcements') || n.includes('role-select')) {
     ow.push({ id: everyone, type: 0, allow: VIEW, deny: DENY_READ_CH });
   } else if (ch.type === 2) {
     ow.push({ id: everyone, type: 0, allow: VOICE, deny: NONE });
