@@ -128,7 +128,7 @@ module.exports = async function handler(req, res) {
           type: 2,
           label: c,
           style: 2,
-          custom_id: 'role_' + c.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_')
+          custom_id: 'role_' + c.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
         }))
       });
     }
