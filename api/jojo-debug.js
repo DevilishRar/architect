@@ -11,44 +11,37 @@ module.exports = async function handler(req, res) {
   const results = [];
 
   try {
-    // Test 1: Get bot user
     const t1 = Date.now();
     const botRes = await fetch(`${REST}/users/@me`, {
       headers: { Authorization: `Bot ${BOT_TOKEN}` }
     });
     const bot = await botRes.json();
-    results.push(`Bot user: ${bot.username}#${bot.discriminator} (${Date.now() - t1}ms)`);
+    results.push(`Bot user: ${bot.username} (${Date.now() - t1}ms)`);
 
-    // Test 2: Get guild roles
     const t2 = Date.now();
     const rolesRes = await fetch(`${REST}/guilds/${guildId}/roles`, {
       headers: { Authorization: `Bot ${BOT_TOKEN}` }
     });
     const roles = await rolesRes.json();
-    results.push(`Guild roles: ${Array.isArray(roles) ? roles.length : JSON.stringify(roles).slice(0,100)} (${Date.now() - t2}ms)`);
+    results.push(`Guild roles: ${Array.isArray(roles) ? roles.length : 'error'} (${Date.now() - t2}ms)`);
 
-    // Test 3: Create a single role
+    const SP_ID = '1542117577998733402';
     const t3 = Date.now();
-    const createRes = await fetch(`${REST}/guilds/${guildId}/roles`, {
-      method: 'POST',
-      headers: { Authorization: `Bot ${BOT_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: '_debug_test', color: 0xFF0000, permissions: '0', hoist: false, mentionable: false })
+    const chRes = await fetch(`${REST}/guilds/${guildId}/channels`, {
+      headers: { Authorization: `Bot ${BOT_TOKEN}` }
     });
-    const createText = await createRes.text();
-    results.push(`Create role: ${createRes.status} (${Date.now() - t3}ms)`);
-    if (createRes.ok) {
-      const created = JSON.parse(createText);
-      results.push(`Created role ID: ${created.id}`);
-
-      // Test 4: Delete the test role
-      const t4 = Date.now();
-      const delRes = await fetch(`${REST}/guilds/${guildId}/roles/${created.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bot ${BOT_TOKEN}` }
-      });
-      results.push(`Delete role: ${delRes.status} (${Date.now() - t4}ms)`);
+    const channels = await chRes.json();
+    const missingPerms = [];
+    if (Array.isArray(channels)) {
+      for (const ch of channels) {
+        const spOverwrite = (ch.permission_overwrites || []).find(o => o.id === SP_ID);
+        if (!spOverwrite) {
+          missingPerms.push(`${ch.name}(${ch.id})`);
+        }
+      }
+      results.push(`Channels: ${channels.length} total, missing SP perms on: ${missingPerms.length > 0 ? missingPerms.join(', ') : 'none'} (${Date.now() - t3}ms)`);
     } else {
-      results.push(`Error: ${createText.slice(0, 200)}`);
+      results.push(`Channels error: ${JSON.stringify(channels).slice(0, 200)}`);
     }
 
     return res.status(200).json({ results });
