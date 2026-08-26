@@ -473,39 +473,46 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ success: true, phase: 1, complete: false, log, elapsed: elapsed + 's' });
     }
 
-    // ── PHASE 2: Create roles ──
+    // ── PHASE 2: Create roles (split: sub param selects chunk) ──
     if (phase === 2) {
-      const botUser = await api('GET', '/users/@me');
-      const botUserIdNew = botUser ? botUser.id : null;
+      const sub = body.sub || 0;
+      const perSub = 50;
+      const start = sub * perSub;
+      const chunk = CONFIG.roles.slice(start, start + perSub);
 
-      log.push('Creating roles...');
-      const newRoleIds = {};
-      const BATCH = 10;
-      for (let i = 0; i < CONFIG.roles.length; i += BATCH) {
-        const batch = CONFIG.roles.slice(i, i + BATCH);
-        const results = await Promise.all(batch.map(def =>
-          api('POST', `/guilds/${guildId}/roles`, {
-            name: def.name, color: def.color, permissions: def.permissions,
-            hoist: def.hoist, mentionable: def.mentionable
-          }).then(role => ({ name: def.name, role })).catch(() => null)
-        ));
-        for (const r of results) {
-          if (r && r.role) newRoleIds[r.name] = r.role.id;
-        }
-        await new Promise(r => setTimeout(r, 200));
+      log.push(`Creating roles ${start + 1}-${start + chunk.length} of ${CONFIG.roles.length}...`);
+      const partialIds = {};
+      for (const def of chunk) {
+        const role = await api('POST', `/guilds/${guildId}/roles`, {
+          name: def.name, color: def.color, permissions: def.permissions,
+          hoist: def.hoist, mentionable: def.mentionable
+        }).catch(() => null);
+        if (role) partialIds[def.name] = role.id;
       }
 
-      await api('PATCH', `/guilds/${guildId}/roles`,
-        CONFIG.roles.map(r => ({ id: newRoleIds[r.name], position: r.position }))
-      ).catch(() => null);
-
       const elapsed = ((Date.now() - t) / 1000).toFixed(1);
-      log.push(`Roles done in ${elapsed}s — created ${Object.keys(newRoleIds).length} roles`);
+      log.push(`Roles chunk done in ${elapsed}s — created ${Object.keys(partialIds).length}`);
 
       return res.status(200).json({
         success: true, phase: 2, complete: false, log,
-        roles: newRoleIds, botUserId: botUserIdNew,
-        elapsed: elapsed + 's'
+        roles: partialIds, elapsed: elapsed + 's'
+      });
+    }
+
+    // ── PHASE 2B: Order roles ──
+    if (phase === 20) {
+      const roleIds = body.roles || {};
+      log.push('Ordering roles...');
+      await api('PATCH', `/guilds/${guildId}/roles`,
+        CONFIG.roles.map(r => ({ id: roleIds[r.name], position: r.position }))
+      ).catch(() => null);
+      const botUser = await api('GET', '/users/@me');
+
+      const elapsed = ((Date.now() - t) / 1000).toFixed(1);
+      log.push(`Roles ordered in ${elapsed}s`);
+      return res.status(200).json({
+        success: true, phase: 20, complete: false, log,
+        botUserId: botUser ? botUser.id : null, elapsed: elapsed + 's'
       });
     }
 
