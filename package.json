@@ -1,8 +1,10 @@
 {
   "name": "ambrosia-builder-bot",
   "version": "1.0.0",
-  "description": "Ambrosia Discord server builder - creates the entire server structure via browser console",
+  "description": "Ambrosia Discord server builder",
   "main": "console-builder.js",
   "scripts": {},
-  "dependencies": {}
+  "dependencies": {
+    "@vercel/kv": "^3.0.0"
+  }
 }
