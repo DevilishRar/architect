@@ -432,156 +432,168 @@ module.exports = async function handler(req, res) {
 
   const guildId = body.guild_id;
   if (!guildId) return res.status(400).json({ error: 'guild_id required' });
+  const phase = body.phase || 1;
 
   const log = [];
+  const t = Date.now();
 
   try {
-    const t = Date.now();
+    // ── PHASE 1: Cleanup + Create roles ──
+    if (phase === 1) {
+      const botUser = await api('GET', '/users/@me');
+      const botUserId = botUser ? botUser.id : null;
 
-    // Get bot user
-    const botUser = await api('GET', '/users/@me');
-    const botUserId = botUser ? botUser.id : null;
+      log.push('Cleaning up existing channels and roles...');
+      const [allChannels, allRoles] = await Promise.all([
+        api('GET', `/guilds/${guildId}/channels`),
+        api('GET', `/guilds/${guildId}/roles`)
+      ]);
 
-    // ── CLEANUP ──
-    log.push('Cleaning up existing channels and roles...');
-    const [allChannels, allRoles] = await Promise.all([
-      api('GET', `/guilds/${guildId}/channels`),
-      api('GET', `/guilds/${guildId}/roles`)
-    ]);
+      const channelsToDelete = allChannels.filter(c => c.type !== 4).sort((a, b) => b.position - a.position);
+      const catsToDelete = allChannels.filter(c => c.type === 4).sort((a, b) => b.position - a.position);
+      const rolesToDelete = allRoles.filter(r => r.name !== '@everyone' && !r.managed);
 
-    const channelsToDelete = allChannels.filter(c => c.type !== 4).sort((a, b) => b.position - a.position);
-    const catsToDelete = allChannels.filter(c => c.type === 4).sort((a, b) => b.position - a.position);
-    const rolesToDelete = allRoles.filter(r => r.name !== '@everyone' && !r.managed);
-
-    // Delete channels in batches of 50
-    for (let i = 0; i < channelsToDelete.length; i += 50) {
-      const batch = channelsToDelete.slice(i, i + 50);
-      await Promise.all(batch.map(ch => api('DELETE', `/channels/${ch.id}`).catch(() => null)));
-    }
-    // Delete categories in batches of 50
-    for (let i = 0; i < catsToDelete.length; i += 50) {
-      const batch = catsToDelete.slice(i, i + 50);
-      await Promise.all(batch.map(cat => api('DELETE', `/channels/${cat.id}`).catch(() => null)));
-    }
-    // Delete roles in batches of 50
-    for (let i = 0; i < rolesToDelete.length; i += 50) {
-      const batch = rolesToDelete.slice(i, i + 50);
-      await Promise.all(batch.map(r => api('DELETE', `/guilds/${guildId}/roles/${r.id}`).catch(() => null)));
-    }
-    await new Promise(r => setTimeout(r, 500));
-
-    // ── CREATE ROLES (in batches of 50) ──
-    log.push('Creating roles...');
-    const roleIds = {};
-    for (let i = 0; i < CONFIG.roles.length; i += 50) {
-      const batch = CONFIG.roles.slice(i, i + 50);
-      const results = await Promise.all(batch.map(def =>
-        api('POST', `/guilds/${guildId}/roles`, {
-          name: def.name, color: def.color, permissions: def.permissions,
-          hoist: def.hoist, mentionable: def.mentionable
-        }).then(role => ({ name: def.name, role })).catch(() => null)
-      ));
-      for (const r of results) {
-        if (r && r.role) roleIds[r.name] = r.role.id;
+      for (let i = 0; i < channelsToDelete.length; i += 50) {
+        const batch = channelsToDelete.slice(i, i + 50);
+        await Promise.all(batch.map(ch => api('DELETE', `/channels/${ch.id}`).catch(() => null)));
       }
-    }
+      for (let i = 0; i < catsToDelete.length; i += 50) {
+        const batch = catsToDelete.slice(i, i + 50);
+        await Promise.all(batch.map(cat => api('DELETE', `/channels/${cat.id}`).catch(() => null)));
+      }
+      for (let i = 0; i < rolesToDelete.length; i += 50) {
+        const batch = rolesToDelete.slice(i, i + 50);
+        await Promise.all(batch.map(r => api('DELETE', `/guilds/${guildId}/roles/${r.id}`).catch(() => null)));
+      }
+      await new Promise(r => setTimeout(r, 500));
 
-    // Order roles
-    await api('PATCH', `/guilds/${guildId}/roles`,
-      CONFIG.roles.map(r => ({ id: roleIds[r.name], position: r.position }))
-    ).catch(() => null);
-    await new Promise(r => setTimeout(r, 200));
+      log.push('Creating roles...');
+      const roleIds = {};
+      for (let i = 0; i < CONFIG.roles.length; i += 25) {
+        const batch = CONFIG.roles.slice(i, i + 25);
+        const results = await Promise.all(batch.map(def =>
+          api('POST', `/guilds/${guildId}/roles`, {
+            name: def.name, color: def.color, permissions: def.permissions,
+            hoist: def.hoist, mentionable: def.mentionable
+          }).then(role => ({ name: def.name, role })).catch(() => null)
+        ));
+        for (const r of results) {
+          if (r && r.role) roleIds[r.name] = r.role.id;
+        }
+        if (i + 25 < CONFIG.roles.length) await new Promise(r => setTimeout(r, 500));
+      }
 
-    // ── CREATE CATEGORIES + CHANNELS ──
-    log.push('Creating categories and channels...');
-    const channelLookup = {};
+      await api('PATCH', `/guilds/${guildId}/roles`,
+        CONFIG.roles.map(r => ({ id: roleIds[r.name], position: r.position }))
+      ).catch(() => null);
 
-    function cleanKey(name) {
-      return name.replace(/[^\w\s]/g, '').replace(/\s+/g, '_').toLowerCase().replace(/^_+|_+$/g, '');
-    }
+      const elapsed = ((Date.now() - t) / 1000).toFixed(1);
+      log.push(`Phase 1 done in ${elapsed}s — ${Object.keys(roleIds).length} roles created`);
 
-    for (const catDef of CONFIG.categories) {
-      const catPermsOw = [];
-
-      const cat = await api('POST', `/guilds/${guildId}/channels`, {
-        name: catDef.name, type: 4, permission_overwrites: catPermsOw
+      return res.status(200).json({
+        success: true, phase: 1, complete: false,
+        log, roles: roleIds, botUserId,
+        elapsed: elapsed + 's'
       });
-      if (!cat) continue;
-      channelLookup[catDef.name] = cat.id;
+    }
 
-      // Create channels in this category in batches of 10 (need parent_id)
-      for (let i = 0; i < catDef.children.length; i += 10) {
-        const batch = catDef.children.slice(i, i + 10);
-        const chResults = await Promise.all(batch.map(chDef => {
+    // ── PHASE 2: Create channels ──
+    if (phase === 2) {
+      const roleIds = body.roles || {};
+      const botUserId = body.botUserId || null;
+
+      log.push('Creating categories and channels...');
+      const channelLookup = {};
+
+      function cleanKey(name) {
+        return name.replace(/[^\w\s]/g, '').replace(/\s+/g, '_').toLowerCase().replace(/^_+|_+$/g, '');
+      }
+
+      for (const catDef of CONFIG.categories) {
+        const cat = await api('POST', `/guilds/${guildId}/channels`, {
+          name: catDef.name, type: 4, permission_overwrites: []
+        });
+        if (!cat) continue;
+        channelLookup[catDef.name] = cat.id;
+
+        for (const chDef of catDef.children) {
           const chPayload = {
             name: chDef.name, type: chDef.type, parent_id: cat.id,
             topic: chDef.topic || undefined,
             permission_overwrites: chPerms(roleIds, chDef, guildId, botUserId)
           };
           if (chDef.decor) chPayload.flags = (1 << 21).toString();
-          return api('POST', `/guilds/${guildId}/channels`, chPayload)
-            .then(ch => ({ chDef, ch }))
-            .catch(() => null);
-        }));
-        for (const r of chResults) {
-          if (r && r.ch) {
-            const key = cleanKey(r.chDef.name);
-            channelLookup[r.chDef.name] = r.ch.id;
-            channelLookup[key] = r.ch.id;
+          const ch = await api('POST', `/guilds/${guildId}/channels`, chPayload).catch(() => null);
+          if (ch) {
+            const key = cleanKey(chDef.name);
+            channelLookup[chDef.name] = ch.id;
+            channelLookup[key] = ch.id;
           }
         }
       }
-    }
 
-    // ── REGISTER SLASH COMMANDS (via Star Platinum) ──
-    log.push('Registering slash commands...');
-    try {
-      const regRes = await fetch(`https://architect-henna-eta.vercel.app/api/jojo-register-commands`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ guild_id: guildId, secret: 'jojo-register-2026' })
+      const elapsed = ((Date.now() - t) / 1000).toFixed(1);
+      log.push(`Phase 2 done in ${elapsed}s — ${Object.keys(channelLookup).length} channels created`);
+
+      return res.status(200).json({
+        success: true, phase: 2, complete: false,
+        log, channels: channelLookup,
+        elapsed: elapsed + 's'
       });
-      const regData = await regRes.json();
-      if (regData.success) {
-        log.push(`Registered ${regData.registered} slash commands via Star Platinum`);
-      } else {
-        log.push(`Warning: Command registration failed (${regData.error || 'unknown'})`);
-      }
-    } catch (e) {
-      log.push(`Warning: Command registration failed (${e.message})`);
     }
 
-    // ── OUTPUT ──
-    const elapsed = ((Date.now() - t) / 1000).toFixed(1);
-    log.push(`Done in ${elapsed}s`);
+    // ── PHASE 3: Register commands + env output ──
+    if (phase === 3) {
+      const roleIds = body.roles || {};
+      const channelLookup = body.channels || {};
 
-    const envOutput = [
-      `# JoJo Server IDs`,
-      `DISCORD_GUILD_ID=${guildId}`,
-      `OWNER_ROLE_ID=${roleIds['Owner'] || ''}`,
-      '',
-      '# Character Roles',
-      ...CONFIG.roles.filter(r => !r.name.startsWith('───')).map(r => `${r.name.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}_ROLE_ID=${roleIds[r.name] || ''}`),
-      '',
-      '# Divider Roles',
-      ...CONFIG.roles.filter(r => r.name.startsWith('───')).map(r => `${r.name.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}_ROLE_ID=${roleIds[r.name] || ''}`),
-      '',
-      '# Channels',
-      ...Object.entries(channelLookup)
-        .filter(([k]) => !k.includes('│') && !k.includes('afx') && !k.includes('⫘'))
-        .map(([name, id]) => `${name.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}_CHANNEL_ID=${id}`)
-    ].join('\n');
+      log.push('Registering slash commands...');
+      try {
+        const regRes = await fetch(`https://architect-henna-eta.vercel.app/api/jojo-register-commands`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ guild_id: guildId, secret: 'jojo-register-2026' })
+        });
+        const regData = await regRes.json();
+        if (regData.success) {
+          log.push(`Registered ${regData.registered} slash commands via Star Platinum`);
+        } else {
+          log.push(`Warning: Command registration failed (${regData.error || 'unknown'})`);
+        }
+      } catch (e) {
+        log.push(`Warning: Command registration failed (${e.message})`);
+      }
 
-    return res.status(200).json({
-      success: true,
-      log,
-      roles: roleIds,
-      channels: channelLookup,
-      env: envOutput,
-      elapsed: elapsed + 's'
-    });
+      const envOutput = [
+        `# JoJo Server IDs`,
+        `DISCORD_GUILD_ID=${guildId}`,
+        `OWNER_ROLE_ID=${roleIds['Owner'] || ''}`,
+        '',
+        '# Character Roles',
+        ...CONFIG.roles.filter(r => !r.name.startsWith('───')).map(r => `${r.name.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}_ROLE_ID=${roleIds[r.name] || ''}`),
+        '',
+        '# Divider Roles',
+        ...CONFIG.roles.filter(r => r.name.startsWith('───')).map(r => `${r.name.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}_ROLE_ID=${roleIds[r.name] || ''}`),
+        '',
+        '# Channels',
+        ...Object.entries(channelLookup)
+          .filter(([k]) => !k.includes('│') && !k.includes('afx') && !k.includes('⫘'))
+          .map(([name, id]) => `${name.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}_CHANNEL_ID=${id}`)
+      ].join('\n');
+
+      const elapsed = ((Date.now() - t) / 1000).toFixed(1);
+      log.push(`Build complete in ${elapsed}s`);
+
+      return res.status(200).json({
+        success: true, phase: 3, complete: true,
+        log, env: envOutput,
+        elapsed: elapsed + 's'
+      });
+    }
+
+    return res.status(400).json({ error: 'Invalid phase' });
 
   } catch (e) {
-    return res.status(500).json({ error: e.message, log });
+    return res.status(500).json({ error: e.message, log, phase });
   }
 };
