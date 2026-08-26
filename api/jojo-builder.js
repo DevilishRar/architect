@@ -8,7 +8,7 @@ function getHeaders() {
 
 async function api(method, path, body) {
   const now = Date.now();
-  if (now < rateLimitReset) await new Promise(r => setTimeout(r, rateLimitReset - now + 100));
+  if (now < rateLimitReset) await new Promise(r => setTimeout(r, Math.min(rateLimitReset - now + 100, 4000)));
   const opts = { method, headers: getHeaders() };
   if (body) opts.body = JSON.stringify(body);
   let res;
@@ -17,9 +17,9 @@ async function api(method, path, body) {
   } catch (e) {
     return null;
   }
-  const retry = res.headers.get('retry-after');
-  if (retry || res.status === 429) {
-    const waitMs = retry ? parseFloat(retry) * 1000 + 500 : 2000;
+  if (res.status === 429) {
+    const retry = res.headers.get('retry-after');
+    const waitMs = retry ? Math.min(parseFloat(retry) * 1000 + 500, 5000) : 2000;
     rateLimitReset = Date.now() + waitMs;
     await new Promise(r => setTimeout(r, waitMs));
     try {
