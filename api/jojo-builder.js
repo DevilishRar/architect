@@ -480,14 +480,14 @@ module.exports = async function handler(req, res) {
         hoist: def.hoist, mentionable: def.mentionable
       });
       if (role) roleIds[def.name] = role.id;
-      await new Promise(r => setTimeout(r, 150));
+      await new Promise(r => setTimeout(r, 50));
     }
 
     // Order roles
     await api('PATCH', `/guilds/${guildId}/roles`,
       CONFIG.roles.map(r => ({ id: roleIds[r.name], position: r.position }))
     ).catch(() => null);
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 200));
 
     // ── CREATE CATEGORIES + CHANNELS ──
     log.push('Creating categories and channels...');
@@ -519,7 +519,7 @@ module.exports = async function handler(req, res) {
           channelLookup[chDef.name] = ch.id;
           channelLookup[key] = ch.id;
         }
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 50));
       }
     }
 
