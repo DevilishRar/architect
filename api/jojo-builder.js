@@ -257,6 +257,7 @@ const CONFIG = {
       name: '🌹／JOJO\'S BIZARRE ADVENTURE',
       children: [
         { name: '꧁⎝ 𓆩༺✧༻𓆪 ⎠꧂', type: 0, topic: '', decor: true },
+        { name: '👋│welcome', type: 0, topic: 'Welcome and goodbye messages' },
         { name: '📜│rules', type: 0, topic: 'Read before entering' },
         { name: '📢│announcements', type: 0, topic: 'News and updates' },
         { name: '🎭│role-select', type: 0, topic: 'Pick your character!' },

@@ -90,6 +90,7 @@ module.exports = async function handler(req, res) {
 
   // Fallback: read from env vars if ids not in request body
   const envIds = {
+    welcome: ids.welcome || process.env.WELCOME_CHANNEL_ID,
     rules: ids.rules || process.env.RULES_CHANNEL_ID,
     faq: ids.faq || process.env.FAQ_CHANNEL_ID,
     announcements: ids.announcements || process.env.ANNOUNCEMENTS_CHANNEL_ID,
@@ -138,6 +139,21 @@ module.exports = async function handler(req, res) {
     }
     return rows;
   }
+
+  // ══════════════════════════════════════════════════
+  // 👋 WELCOME
+  // ══════════════════════════════════════════════════
+  await send(envIds.welcome, {
+    title: '👋 Welcome System Active!',
+    description: 'This channel welcomes new members and says goodbye to those who leave.\n\nNew members will see a welcome message here with instructions on where to start.',
+    color: COLORS.gold,
+    image: { url: GIFS.jjbaGeneral },
+    fields: [
+      { name: 'What happens here?', value: 'When someone joins, they get a welcome embed with links to rules, role-select, and general chat.\nWhen someone leaves, they get a goodbye embed.', inline: false },
+    ],
+    footer: { text: 'Managed by Star Platinum ⭐' },
+    timestamp: new Date().toISOString()
+  });
 
   // ══════════════════════════════════════════════════
   // 📜 RULES
