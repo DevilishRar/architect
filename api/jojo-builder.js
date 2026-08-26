@@ -480,12 +480,19 @@ module.exports = async function handler(req, res) {
 
       log.push('Creating roles...');
       const newRoleIds = {};
-      for (const def of CONFIG.roles) {
-        const role = await api('POST', `/guilds/${guildId}/roles`, {
-          name: def.name, color: def.color, permissions: def.permissions,
-          hoist: def.hoist, mentionable: def.mentionable
-        }).catch(() => null);
-        if (role) newRoleIds[def.name] = role.id;
+      const BATCH = 10;
+      for (let i = 0; i < CONFIG.roles.length; i += BATCH) {
+        const batch = CONFIG.roles.slice(i, i + BATCH);
+        const results = await Promise.all(batch.map(def =>
+          api('POST', `/guilds/${guildId}/roles`, {
+            name: def.name, color: def.color, permissions: def.permissions,
+            hoist: def.hoist, mentionable: def.mentionable
+          }).then(role => ({ name: def.name, role })).catch(() => null)
+        ));
+        for (const r of results) {
+          if (r && r.role) newRoleIds[r.name] = r.role.id;
+        }
+        await new Promise(r => setTimeout(r, 200));
       }
 
       await api('PATCH', `/guilds/${guildId}/roles`,
