@@ -87,6 +87,24 @@ module.exports = async function handler(req, res) {
 
   const ids = req.body.ids || {};
   const log = [];
+
+  // Fallback: read from env vars if ids not in request body
+  const envIds = {
+    rules: ids.rules || process.env.RULES_CHANNEL_ID,
+    faq: ids.faq || process.env.FAQ_CHANNEL_ID,
+    announcements: ids.announcements || process.env.ANNOUNCEMENTS_CHANNEL_ID,
+    links: ids.links || process.env.LINKS_CHANNEL_ID,
+    role_select: ids.role_select || process.env.ROLESELECT_CHANNEL_ID || process.env.ROLE_SELECT_CHANNEL_ID,
+    member_list: ids.member_list || process.env.MEMBERLIST_CHANNEL_ID,
+    general: ids.general || process.env.GENERAL_CHANNEL_ID,
+    vrchat_chat: ids.vrchat_chat || process.env.VRCHATCHAT_CHANNEL_ID || process.env.VRCHAT_CHAT_CHANNEL_ID,
+    content_ideas: ids.content_ideas || process.env.CONTENTIDEAS_CHANNEL_ID || process.env.CONTENT_IDEAS_CHANNEL_ID,
+    dnd_corner: ids.dnd_corner || process.env.DNDCORNER_CHANNEL_ID,
+    bot_commands: ids.bot_commands || process.env.BOTCOMMANDS_CHANNEL_ID || process.env.BOT_COMMANDS_CHANNEL_ID,
+    general_chat: ids.general_chat || process.env.GENERALCHAT_CHANNEL_ID || process.env.GENERAL_CHAT_CHANNEL_ID,
+    music_share: ids.music_share || process.env.MUSICSHARE_CHANNEL_ID || process.env.MUSIC_SHARE_CHANNEL_ID,
+    media_share: ids.media_share || process.env.MEDIASHARE_CHANNEL_ID || process.env.MEDIA_SHARE_CHANNEL_ID,
+  };
   let delay = 0;
 
   async function send(channelId, embedOrContent, components) {
@@ -124,7 +142,7 @@ module.exports = async function handler(req, res) {
   // ══════════════════════════════════════════════════
   // 📜 RULES
   // ══════════════════════════════════════════════════
-  await send(ids.rules, {
+  await send(envIds.rules, {
     title: 'Server Rules',
     description: 'Welcome to the JoJo\'s Bizarre Adventure Discord server! Please read these rules before participating.',
     color: COLORS.phantomBlood,
@@ -145,7 +163,7 @@ module.exports = async function handler(req, res) {
   // ══════════════════════════════════════════════════
   // ❓ FAQ
   // ══════════════════════════════════════════════════
-  await send(ids.faq, {
+  await send(envIds.faq, {
     title: 'Frequently Asked Questions',
     description: 'Everything you need to know about this server.',
     color: COLORS.stardust,
@@ -165,7 +183,7 @@ module.exports = async function handler(req, res) {
   // ══════════════════════════════════════════════════
   // 📢 ANNOUNCEMENTS
   // ══════════════════════════════════════════════════
-  await send(ids.announcements, {
+  await send(envIds.announcements, {
     title: 'Welcome to the Bizarre Adventure!',
     description: 'This is the official JoJo\'s Bizarre Adventure friend group server.',
     color: COLORS.gold,
@@ -183,7 +201,7 @@ module.exports = async function handler(req, res) {
   // ══════════════════════════════════════════════════
   // 🔗 LINKS
   // ══════════════════════════════════════════════════
-  await send(ids.links, {
+  await send(envIds.links, {
     title: 'Official Links',
     description: 'All the important links for the JoJo Bros.',
     color: COLORS.purple,
@@ -201,7 +219,7 @@ module.exports = async function handler(req, res) {
   // ══════════════════════════════════════════════════
 
   // Header embed
-  await send(ids.role_select, {
+  await send(envIds.role_select, {
     title: 'Choose Your Stand User!',
     description: 'Click a button below to claim your character role. You can only have one at a time — picking a new one removes the old.\n\nYour role gives you a unique color in the member list.',
     color: COLORS.gold,
@@ -211,68 +229,68 @@ module.exports = async function handler(req, res) {
   });
 
   // Phantom Blood
-  await send(ids.role_select, {
+  await send(envIds.role_select, {
     title: 'Phantom Blood',
     description: 'Part 1 — The origin of the Joestar bloodline and their eternal rivalry with DIO.',
     color: 0x1E3A5F
   }, makeButtons(['Jonathan Joestar', 'Dio Brando', 'Will A. Zeppeli', 'Speedwagon', 'Erina Pendleton', 'George Joestar I', 'Bruford', 'Tarkus', 'Dire', 'Straizo', 'Poco', 'Wang Chan']));
 
   // Battle Tendency
-  await send(ids.role_select, {
+  await send(envIds.role_select, {
     title: 'Battle Tendency',
     description: 'Part 2 — Joseph Joestar vs the Pillar Men. The pinnacle of Hamon.',
     color: 0x228B22
   }, makeButtons(['Joseph Joestar', 'Caesar Zeppeli', 'Lisa Lisa', 'Wamuu', 'Kars', 'Esidisi', 'Stroheim', 'Suzi Q', 'Messina', 'Loggins']));
 
   // Stardust Crusaders
-  await send(ids.role_select, {
+  await send(envIds.role_select, {
     title: 'Stardust Crusaders',
     description: 'Part 3 — The journey to Egypt. Jotaro, Polnareff, Kakyoin, Avdol, Iggy vs DIO.',
     color: 0x000080
   }, makeButtons(['Jotaro Kujo', 'Star Platinum', 'Jean Pierre Polnareff', 'Silver Chariot', 'Noriaki Kakyoin', 'Hierophant Green', 'Muhammad Avdol', 'Magician Red', 'Iggy', 'The Fool', 'DIO', 'The World', 'Old Joseph', 'Hermit Purple', 'Hol Horse', 'Emperor', 'Boingo', 'Tohth', "Daniel D'Arby", "Telence D'Arby", 'Vanilla Ice', 'Cream', 'Nukesaku', 'Alessi', 'Mariah']));
 
-  await send(ids.role_select, {
+  await send(envIds.role_select, {
     title: 'Stardust Crusaders (cont.)',
     description: 'More Stand users from the journey to Egypt.',
     color: 0x000080
   }, makeButtons(['Bastet', 'Midler', 'High Priestess', "N'Doul", 'Geb', 'Oingo', 'Khnum', 'Anubis', 'Nena', 'The Lovers', 'Steely Dan', 'J. Geil', 'Hanged Man']));
 
   // Diamond Is Unbreakable
-  await send(ids.role_select, {
+  await send(envIds.role_select, {
     title: 'Diamond Is Unbreakable',
     description: 'Part 4 — The quiet town of Morioh and its deadly secrets.',
     color: 0x003366
   }, makeButtons(['Josuke Higashikata', 'Crazy Diamond', 'Okuyasu Nijimura', 'The Hand', 'Rohan Kishibe', "Heaven's Door", 'Koichi Hirose', 'Echoes', 'Yoshikage Kira', 'Killer Queen', 'Hayato Kawajiri', 'Yukako Yamagishi', 'Tonio Trussardi', 'Keicho Nijimura', 'Bad Company', 'Akira Otoishi', 'Red Hot Chili Pepper', 'Toyohiro Kanedaichi', 'Super Fly', 'Yoshihiro Kira', 'Stray Cat']));
 
   // Golden Wind
-  await send(ids.role_select, {
+  await send(envIds.role_select, {
     title: 'Golden Wind',
     description: 'Part 5 — Giorno Giovanna and Passione. The gang-star rises.',
     color: 0x9B59B6
   }, makeButtons(['Giorno Giovanna', 'Gold Experience', 'Bruno Bucciarati', 'Sticky Fingers', 'Guido Mista', 'Sex Pistols', 'Narancia Ghirga', 'Aerosmith', 'Leone Abbacchio', 'Moody Blues', 'Pannacotta Fugo', 'Purple Haze', 'Diavolo', 'King Crimson', 'Trish Una', 'Spice Girl', 'Risotto Nero', 'Metallica', 'Ghiaccio', 'White Album', 'Melone', 'Baby Face', 'Formaggio', 'Little Feet', 'Illuso']));
 
-  await send(ids.role_select, {
+  await send(envIds.role_select, {
     title: 'Golden Wind (cont.)',
     description: 'More Passione members and enemies.',
     color: 0x9B59B6
   }, makeButtons(['Man in the Mirror', 'Prosciutto', 'The Grateful Dead', 'Pesci', 'Beach Boy', 'Squalo', 'Clash', 'Tiziano', 'Talking Head', 'Cioccolata', 'Green Day', 'Secco', 'Oasis']));
 
   // Stone Ocean
-  await send(ids.role_select, {
+  await send(envIds.role_select, {
     title: 'Stone Ocean',
     description: 'Part 6 — Jolyne Cujoh vs Enrico Pucci. The fate of the Joestar bloodline.',
     color: 0x27AE60
   }, makeButtons(['Jolyne Cujoh', 'Ermes Costello', 'Foo Fighters', 'Weather Report', 'Emporio Alnino', 'Enrico Pucci', 'Whitesnake', 'C-Moon', 'Made in Heaven', 'Stone Free', 'Kiss', 'Burning Down the House', 'Diver Down', 'Miraschon', 'Gwess', 'Goo Goo Dolls', 'Narciso Anasui', "Jolyne's Father", 'Green Green Grass of Home']));
 
   // Steel Ball Run
-  await send(ids.role_select, {
+  await send(envIds.role_select, {
     title: 'Steel Ball Run',
     description: 'Part 7 — Johnny Joestar and Gyro Zeppeli in the race of a lifetime.',
     color: 0x4169E1
   }, makeButtons(['Johnny Joestar', 'Gyro Zeppeli', 'Funny Valentine', 'Diego Brando', 'Scary Monsters', 'Hot Pants', 'Cream Starter', 'Mountain Tim', 'Oh! Lonesome Me', 'Sandman', 'In a Silent Way', 'Wekapipo', 'Magent Magent', 'Axl RO', 'Civil War', 'Scarlet Valentine', 'Lucy Steel', 'Tusk', 'Ball Breaker', 'D4C']));
 
   // Jojolion
-  await send(ids.role_select, {
+  await send(envIds.role_select, {
     title: 'Jojolion',
     description: 'Part 8 — Josuke Higashikata and the mystery of the Locacaca.',
     color: 0x9932CC
@@ -281,7 +299,7 @@ module.exports = async function handler(req, res) {
   // ══════════════════════════════════════════════════
   // 📋 MEMBER LIST
   // ══════════════════════════════════════════════════
-  await send(ids.member_list, {
+  await send(envIds.member_list, {
     title: 'Member List',
     description: 'Check the member list on the right to see everyone\'s character roles!\n\nEach member has a unique color based on their JoJo character.',
     color: COLORS.accent,
@@ -297,7 +315,7 @@ module.exports = async function handler(req, res) {
   // ══════════════════════════════════════════════════
   // 🥽 VRCHAT CHAT
   // ══════════════════════════════════════════════════
-  await send(ids.vrchat_chat, {
+  await send(envIds.vrchat_chat, {
     title: 'VRChat Sessions',
     description: 'This is where we coordinate VRChat sessions and share worlds!',
     color: COLORS.goldenWind,
@@ -313,7 +331,7 @@ module.exports = async function handler(req, res) {
   // ══════════════════════════════════════════════════
   // 🎬 CONTENT IDEAS
   // ══════════════════════════════════════════════════
-  await send(ids.content_ideas, {
+  await send(envIds.content_ideas, {
     title: 'Content Ideas',
     description: 'Pitch your YouTube content ideas here!',
     color: COLORS.phantomBlood,
@@ -329,7 +347,7 @@ module.exports = async function handler(req, res) {
   // ══════════════════════════════════════════════════
   // 🎲 DND CORNER
   // ══════════════════════════════════════════════════
-  await send(ids.dnd_corner, {
+  await send(envIds.dnd_corner, {
     title: 'D&D Corner',
     description: 'Our tabletop corner! We occasionally run D&D sessions.',
     color: COLORS.battleTendency,
@@ -344,7 +362,7 @@ module.exports = async function handler(req, res) {
   // ══════════════════════════════════════════════════
   // ☕ GENERAL CHAT
   // ══════════════════════════════════════════════════
-  await send(ids.general, {
+  await send(envIds.general, {
     title: 'General Chat',
     description: 'Welcome to the main hangout! Talk about anything here.',
     color: COLORS.stardust,
@@ -356,7 +374,7 @@ module.exports = async function handler(req, res) {
   // ══════════════════════════════════════════════════
   // 🤖 BOT COMMANDS
   // ══════════════════════════════════════════════════
-  await send(ids.bot_commands, {
+  await send(envIds.bot_commands, {
     title: 'Bot Commands',
     description: 'Use bot commands here! Type /help to see available commands.',
     color: COLORS.purple,
