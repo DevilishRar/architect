@@ -1,5 +1,7 @@
 const BOT_TOKEN = process.env.STAR_PLATINUM_TOKEN || '';
+const BUILDER_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 const SECRET = process.env.BUILDER_SECRET || 'jojo-build-2026';
+const GUILD_ID = '1542084330065498174';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,7 +10,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { channel_ids, secret } = req.body || {};
+  const { secret } = req.body || {};
   if (secret !== SECRET) return res.status(403).json({ error: 'Invalid secret' });
 
   const log = [];
@@ -21,42 +23,44 @@ module.exports = async function handler(req, res) {
     });
     const me = await meRes.json();
     const botUserId = me.id;
+    log.push(`Bot user: ${me.username} (${botUserId})`);
 
-    const channels = channel_ids && channel_ids.length ? channel_ids : null;
+    // Fetch all channels from Discord
+    const chRes = await fetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/channels`, {
+      headers: { Authorization: `Bot ${BUILDER_TOKEN}` }
+    });
+    const channels = await chRes.json();
 
-    if (!channels) {
-      return res.status(400).json({ error: 'No channel IDs provided' });
+    if (!Array.isArray(channels)) {
+      return res.status(500).json({ error: 'Failed to fetch channels', log });
     }
 
-    for (const chId of channels) {
+    // Only text channels (type 0)
+    const textChannels = channels.filter(ch => ch.type === 0);
+    log.push(`Found ${textChannels.length} text channels`);
+
+    for (const ch of textChannels) {
       try {
         let before = null;
         let deleted = 0;
 
-        // Fetch up to 500 messages per channel
         for (let i = 0; i < 10; i++) {
-          const url = `https://discord.com/api/v10/channels/${chId}/messages?limit=100${before ? '&before=' + before : ''}`;
+          const url = `https://discord.com/api/v10/channels/${ch.id}/messages?limit=100${before ? '&before=' + before : ''}`;
           const msgRes = await fetch(url, {
             headers: { Authorization: `Bot ${BOT_TOKEN}` }
           });
-          if (!msgRes.ok) {
-            const err = await msgRes.text();
-            log.push(`  ${chId}: fetch failed ${msgRes.status} ${err.slice(0, 100)}`);
-            break;
-          }
+          if (!msgRes.ok) break;
           const messages = await msgRes.json();
           if (!messages.length) break;
 
-          // Filter to bot-only messages
           const botMsgs = messages.filter(m => m.author && m.author.id === botUserId);
-          if (botMsgs.length === 0) {
+          if (!botMsgs.length) {
             before = messages[messages.length - 1].id;
             continue;
           }
 
-          // Bulk delete (up to 100 at a time, messages must be <14 days old)
           const ids = botMsgs.map(m => m.id);
-          const bulkRes = await fetch(`https://discord.com/api/v10/channels/${chId}/messages/bulk-delete`, {
+          const bulkRes = await fetch(`https://discord.com/api/v10/channels/${ch.id}/messages/bulk-delete`, {
             method: 'POST',
             headers: { Authorization: `Bot ${BOT_TOKEN}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages: ids })
@@ -65,13 +69,12 @@ module.exports = async function handler(req, res) {
           if (bulkRes.ok) {
             deleted += ids.length;
           } else {
-            // Fall back to individual deletes
             for (const msgId of ids) {
-              const delRes = await fetch(`https://discord.com/api/v10/channels/${chId}/messages/${msgId}`, {
+              await fetch(`https://discord.com/api/v10/channels/${ch.id}/messages/${msgId}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bot ${BOT_TOKEN}` }
               });
-              if (delRes.ok || delRes.status === 204) deleted++;
+              deleted++;
               await new Promise(r => setTimeout(r, 100));
             }
           }
@@ -80,10 +83,12 @@ module.exports = async function handler(req, res) {
           await new Promise(r => setTimeout(r, 300));
         }
 
-        totalDeleted += deleted;
-        log.push(`  ${chId}: deleted ${deleted} bot messages`);
+        if (deleted > 0) {
+          totalDeleted += deleted;
+          log.push(`  ${ch.name}: deleted ${deleted}`);
+        }
       } catch (e) {
-        log.push(`  ${chId}: error ${e.message}`);
+        log.push(`  ${ch.name}: error ${e.message}`);
       }
     }
 
